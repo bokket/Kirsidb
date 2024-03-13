@@ -4,7 +4,7 @@
 #include <memory>
 #include <gtest/gtest.h>
 
-#include "../sstable/block.h"
+#include "../sstable/block_iter.h"
 
 using namespace bokket;
 using namespace std;
@@ -26,13 +26,25 @@ TEST(block, init)
     builder->final(result);
     LOG_INFO("{}",result);
 
-    auto reader=std::make_unique<Block>();
-    reader->Init(result);
+    auto reader=std::make_unique<Block>(result);
+    auto it=reader->begin();
+    auto end=reader->end();
 
-    auto value=reader->Get("key_1");
-    for(auto it=value.begin();it!=value.end();it++) {
-        LOG_INFO("{}",it->data());
+    auto k=it.key();
+    auto v=it.value();
+
+    LOG_INFO("{},{}",k,v);
+
+    for(auto it=reader->begin();it!=reader->end();it++) {
+        LOG_INFO("{},{}",it.key(),it.value());
     }
+
+    for(auto it=reader->begin();it!=reader->end();it++) {
+        auto r = reader->find("key_0");
+        LOG_INFO("{},{}", r.key(), r.value());
+    }
+
+    EXPECT_EQ(it,reader->end());
 }
 
 int main(int argc, char **argv) {

@@ -28,6 +28,8 @@ TEST(block_builder, add) {
 
     builder->finish();
     LOG_INFO("{}",builder->data());
+    s= DecodeFixed32(builder->data().substr(87,4).data());
+    LOG_INFO("{}",s);
     s=DecodeFixed32(builder->data().substr(91,4).data());
     LOG_INFO("{}",s);
     // <record_num><BlockHandle>
@@ -38,6 +40,15 @@ TEST(block_builder, add) {
     LOG_INFO("{}",result);
     s=DecodeFixed32(result.substr(99,4).data());
     LOG_INFO("{},{}",s,result.size());
+
+    s= DecodeFixed32(result.substr(107,4).data());
+    LOG_INFO("{}",s);
+
+    s= DecodeFixed32(result.substr(111,4).data());
+    LOG_INFO("{}",s);
+
+    s= DecodeFixed32(result.substr(115,4).data());
+    LOG_INFO("{}",s);
 }
 
 TEST(block_builder, restart_point)

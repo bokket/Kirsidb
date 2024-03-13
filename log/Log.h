@@ -2,8 +2,6 @@
 // Created by bokket on 2023/12/5.
 //
 
-//#ifndef BOKEDB_LOG_H
-//#define BOKEDB_LOG_H
 #pragma once
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
@@ -140,5 +138,3 @@ private:
 #define STREAM_DEBUG()        bokket::Logger::LogStream({__FILE_NAME__,__LINE__,__FUNCTION__},spdlog::level::debug," ")
 #define STREAM_WARN()        bokket::Logger::LogStream({__FILE_NAME__,__LINE__,__FUNCTION__},spdlog::level::warn,"test")
 #define STREAM_ERROR()        bokket::Logger::LogStream({__FILE_NAME__,__LINE__,__FUNCTION__},spdlog::level::err," ")
-
-//#endif //BOKEDB_LOG_H
