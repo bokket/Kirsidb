@@ -121,14 +121,17 @@ BlockConstIter::BlockConstIter(const Block *container, const char *p, int32_t re
 
 void BlockConstIter::increment() {
 //    const char* last_key=cur_key_.data();
-    last_key_=cur_entry_.data();
+    //last_key_=Buf(cur_key_).data();
+    std::string tmp=cur_key_.data();
 
-//    LOG_INFO("last_key:{}",last_key_);
+    last_key_=std::move(tmp.data());
+
+    LOG_INFO("increment last_key_:{}",last_key_);
 
     std::string_view buf{buf_.data()+ unshared_key_len_+value_len_,buf_len_-unshared_key_len_-value_len_-shared_key_len_};
-  //  LOG_INFO("increment:{} | {} | cur_len:{}",buf_,buf_.data()+ unshared_key_len_+value_len_,buf_len_-unshared_key_len_-value_len_);
+    LOG_INFO("increment:{} | {} | cur_len:{}",buf_,shared_key_len_,buf_len_-unshared_key_len_-value_len_);
     //buf_=buf;
-    //LOG_INFO("increment:{}",buf_);
+
     cur_key_.clear();
     init(buf.data());
 }
@@ -154,31 +157,29 @@ void BlockConstIter::init(const char *p) {
 
         buf_len_=len-sizeof(int32_t)*3;
 
+        LOG_INFO("cur_entry:{}",cur_entry_);
+
         cur_entry_=std::string_view {p+sizeof(int32_t)*3,static_cast<std::string_view::size_type>(unshared_key_len_+value_len_)};;
 
         //buf_=buf_.data()+shared_key_len_+unshared_key_len_+value_len_;
 
-  //      LOG_INFO("buf_:{} | buf_len_:{} | cur_entry:{} |",buf_.data(),buf_len_,cur_entry_);
+
 //        LOG_INFO("buf_:{} | buf_len_:{} |",buf_.data(),buf_len_);
 
-//        LOG_INFO("len:{} | shared_key_len_:{} | unshared_key_len_:{} | value_len_:{} |",len,shared_key_len_,unshared_key_len_,value_len_);
+        LOG_INFO("len:{} | shared_key_len_:{} | unshared_key_len_:{} | value_len_:{} |",len,shared_key_len_,unshared_key_len_,value_len_);
 
         //cur_key_
         if(last_key_!= nullptr) {
-            LOG_INFO("last_key:{}",last_key_);
+            LOG_INFO("last_key:{}| cur_entry:{} | cur_key:{}",last_key_,cur_entry_,cur_key_);
         }
 
-
         assert(cur_key_.empty());
-  //      cur_key_.reserve(shared_key_len_+unshared_key_len_);
-//        assert(cur_key_.empty());
-//        LOG_INFO("cur_key_:{} | size:{}",cur_key_,cur_key_.capacity());
+
+        cur_key_.reserve(shared_key_len_+unshared_key_len_);
         cur_key_.append(last_key_,shared_key_len_);
-   //     LOG_INFO("cur_key_:{} | size:{}",cur_key_,cur_key_.capacity());
         cur_key_.append(cur_entry_.data(),unshared_key_len_);
-   //     LOG_INFO("cur_key_:{} | size:{}",cur_key_,cur_key_.size());
 
-
+     //   LOG_INFO("cur_key_",cur_key_);
         if(unshared_key_len_==0) {
             restarts_block_idx_=static_cast<int32_t>(p-container_->data_.data());
             LOG_INFO("restart_index:{}",restarts_block_idx_);
@@ -186,7 +187,6 @@ void BlockConstIter::init(const char *p) {
     } else {
         buf_=p;
         buf_len_=0;
-//        LOG_INFO("iter end:{}",std::string_view {buf_.data(),10});
     }
 }
 
@@ -197,54 +197,30 @@ std::string_view BlockConstIter::key() const {
     if(!cur_key_.empty())
         return cur_key_;
 
-
-
 //    if(last_key_!= nullptr) {
 //        auto it=BlockConstIter(container_,container_->data_.data()+restarts_block_idx_,restarts_block_idx_);
-//        LOG_INFO("?");
-//        int i=1;
-//        while(it.buf_>buf_) {
+//        while(it.buf_<buf_) {
 //            it++;
 //
 //
-//            LOG_INFO("Time:{} : buf_:{}",i++,it.buf_);
+//            LOG_INFO("buf_:{}",it.buf_);
 //        }
 //
 //        assert(it.buf_==buf_);
 //    }
-
-//    cur_key_.reserve(shared_key_len_+unshared_key_len_);
-//    if(!last_key_.empty()) {
-//        LOG_INFO("last_key_:{}",last_key_);
+//
+//    //cur_key_
+//    if(last_key_!= nullptr) {
+//        LOG_INFO("last_key:{}",last_key_);
 //    }
-//
 //    assert(cur_key_.empty());
-//
-//    std::string_view a{last_key_.data(),static_cast<std::string_view::size_type>(shared_key_len_)};
-//
-//    LOG_INFO("append:{}",a);
-//    cur_key_.append(last_key_.data(),shared_key_len_);
-
-//    LOG_INFO("cur_key:{}",cur_key_);
+//    cur_key_.reserve(shared_key_len_+unshared_key_len_);
+//    cur_key_.append(last_key_,shared_key_len_);
 //    cur_key_.append(buf_.data(),unshared_key_len_);
 //    cur_key_.append(cur_entry_.data(),unshared_key_len_);
 
-  //  LOG_INFO("cur_key_:{}",cur_key_);
-   // LOG_INFO("cur_entry:{}",cur_entry_);
-  //  LOG_INFO("cur_value_:{}",buf_.data()+unshared_key_len_);
-//    LOG_INFO("last_key_:{}",last_key_);
-  //  LOG_INFO("iter end:{}",std::string_view {buf_.data(),10});
 
-//    std::string_view buf{buf_.data()+ unshared_key_len_+value_len_,buf_len_-unshared_key_len_-value_len_-shared_key_len_};
-//    LOG_INFO("end:{} | {} | cur_len:{}",buf,buf.data()+ sizeof(int32_t)*3,buf_len_-unshared_key_len_-value_len_);
-//    buf_=buf;
-//    LOG_INFO("buf:{}",buf_);
-    //buf_=std::move(buf);
-    //std::string_view buf{buf_.data()+ unshared_key_len_+value_len_,buf_len_-unshared_key_len_-value_len_-shared_key_len_};
-
-    //LOG_INFO("key:{}",std::string_view {cur_key_.data(),static_cast<std::string_view::size_type>(shared_key_len_+unshared_key_len_)});
     return cur_key_;
-    //return {cur_key_.data(),static_cast<std::string_view::size_type>(shared_key_len_+unshared_key_len_)};
 }
 
 std::string_view BlockConstIter::value() const {
