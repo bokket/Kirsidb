@@ -44,9 +44,10 @@ public:
 
     bool equal(const BlockConstIter& other) const;
 
-    void init(const char* p);
+    void init(const char *p);
 private:
-    const char* buf_;
+    //const char* buf_;
+    std::string_view buf_;
     const char* last_key_;
 
     size_t restarts_block_idx_;
@@ -59,6 +60,7 @@ private:
     int32_t shared_key_len_;
 
     mutable std::string cur_key_;
+    std::string_view cur_entry_;
     //mutable std::string cur_value_;
 };
 

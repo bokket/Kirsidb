@@ -6,15 +6,33 @@
 
 #include <cstdint>
 
+#include "../db/status.h"
+
 namespace bokket
 {
 
 //OffsetInfo
 struct BlockHandle {
-    int32_t size_=0;
-    int32_t offset_=0;
 
-    int32_t get_offset_info_size() {
+    BlockHandle()
+               :offset_{0}
+               ,size_{0}
+    {}
+
+    BlockHandle(uint64_t size, uint64_t offset)
+               :size_{size}
+               ,offset_{offset}
+    {}
+
+    void Encode(std::string& output, const BlockHandle& handle);
+
+    std::string EncodeToString() const;
+
+    static DB DecodeFrom(const char* input, BlockHandle& handle);
+
+    std::string DebugString(const BlockHandle& handle);
+
+    uint64_t get_offset_info_size() {
         return sizeof(size_)+sizeof(offset_);
     }
 
@@ -22,6 +40,9 @@ struct BlockHandle {
         size_=0;
         offset_=0;
     }
+
+    uint64_t size_;
+    uint64_t offset_;
 };
 
 }

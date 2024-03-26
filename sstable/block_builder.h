@@ -20,24 +20,29 @@ namespace bokket
 class BlockBuilder
 {
 private:
-    std::vector<int32_t> restarts_;
-    std::string pre_key_;
     std::string data_;
+    std::string pre_key_;
+
+    bool finished_;
 
     int32_t record_num_=0;
+
+    std::vector<int32_t> restarts_;
 public:
     //restart
     static constexpr int32_t RESTART_INTERVAL=16;
 
 public:
-    BlockBuilder()=default;
+    BlockBuilder();
     ~BlockBuilder()=default;
 
-    DB add(std::string_view key,std::string_view value);
+    void add(std::string_view key,std::string_view value);
 
     DB finish();
 
     DB final(std::string& result);
+
+    std::string_view final();
 
     std::string_view data() {
         return data_;

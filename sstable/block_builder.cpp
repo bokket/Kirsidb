@@ -6,10 +6,15 @@
 
 using namespace bokket;
 
+BlockBuilder::BlockBuilder()
+                         :finished_(false)
+{}
 
-DB BlockBuilder::add(std::string_view key, std::string_view value) {
-    if (key.empty())
-        return DB::OK;
+void BlockBuilder::add(std::string_view key, std::string_view value) {
+//    if (key.empty())
+//        return DB::OK;
+    assert(!finished_);
+
     bool need = false;
 
     //RESTART_INTERVAL
@@ -60,7 +65,7 @@ DB BlockBuilder::add(std::string_view key, std::string_view value) {
     LOG_INFO("{},{}",pre_key_,data_);
 
     LOG_INFO("record_:{}",record_num_);
-    return DB::OK;
+    //return DB::OK;
 }
 
 DB BlockBuilder::finish() {
@@ -75,7 +80,7 @@ DB BlockBuilder::finish() {
         int32_t record_num;
         BlockHandle offsetInfo{
             0,
-            restarts_[i]
+            static_cast<uint64_t>(restarts_[i])
         };
         if(i!=restarts_.size()-1) {
             offsetInfo.size_=restarts_[i+1]-restarts_[i];
@@ -106,7 +111,27 @@ DB BlockBuilder::final(std::string& result) {
     return DB::OK;
 }
 
+std::string_view BlockBuilder::final() {
+    if(finished_) {
+        return std::string_view {data_};
+    }
+
+    int restarts_len=static_cast<int>(restarts_.size());
+
+    for(int i=0;i<restarts_len;++i) {
+        PutFixed32(data_,restarts_[i]);
+        LOG_INFO("len:{},{}",restarts_len,restarts_[i]);
+    }
+
+    PutFixed32(data_,restarts_len);
+
+    finished_= true;
+    return std::string_view {data_};
+}
+
 void BlockBuilder::clear() {
+    finished_= false;
+
     restarts_.clear();
     pre_key_.clear();
 
