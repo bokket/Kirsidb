@@ -14,30 +14,65 @@ namespace bokket
 
 class Block;
 
+class SSTable;
+
 class BlockConstIter;
 
 
-using BlockIterFacade=
-        IteratorFacadeNoValueType<BlockConstIter,ForwardIteratorTag, true>;
+// using BlockIterFacade=
+//         IteratorFacadeNoValueType<BlockConstIter,ForwardIteratorTag, true>;
 
 //template<class Ptr>
-class BlockConstIter:public BlockIterFacade
-{
+// class BlockConstIter:public BlockIterFacade
 
+class BlockConstIter
+{
+public:
+    using iterator_category = std::bidirectional_iterator_tag;
+
+    using value_type = BlockConstIter;
+    using difference_type = std::ptrdiff_t;
+    using pointer = BlockConstIter*;
+    using reference = const value_type&; 
 public:
     friend class Block;
 
 //    using Iter_ptr=typename std::pointer_traits<Ptr>::template rebind<Block>;
     //class Block;
-    BlockConstIter(const Block* container, const char* p, int32_t restart);
+    explicit BlockConstIter(Block* container, const char* p, int32_t restart);
+
+
+    BlockConstIter();
+
+    //BlockConstIter(const char* begin,const char* end,const char* p,uint32_t restart);
+
+    BlockConstIter(const BlockConstIter& rhs);
+
+    BlockConstIter& operator=(const BlockConstIter& rhs);
 
     std::string_view key() const;
 
     std::string_view value() const;
 
-    auto getContainer() {
+
+    auto getContainer()const {
         return container_;
     }
+
+    reference operator*() const noexcept;
+
+    const BlockConstIter* operator->() const noexcept;
+    BlockConstIter& operator++() noexcept;
+    BlockConstIter operator++(int) noexcept;
+    // BlockConstIter& operator--() noexcept;
+    // BlockConstIter operator--(int) noexcept;
+    bool operator==(const BlockConstIter& right) const noexcept;
+
+    bool operator!=(const BlockConstIter &rhs) const noexcept {
+        return !(*this == rhs); 
+    }
+
+    operator bool();
 
 public:
     void increment();
@@ -48,16 +83,17 @@ public:
 private:
     //const char* buf_;
     std::string_view buf_;
-    const char* last_key_;
+
+    std::string last_key_;
 
     size_t restarts_block_idx_;
     size_t buf_len_;
 
     const Block* container_;
     //std::shared_ptr<Block> container_;
-    int32_t value_len_;
-    int32_t unshared_key_len_;
-    int32_t shared_key_len_;
+    uint32_t value_len_;
+    uint32_t unshared_key_len_;
+    uint32_t shared_key_len_;
 
     mutable std::string cur_key_;
     std::string_view cur_entry_;
@@ -65,37 +101,43 @@ private:
 };
 
 
-class Block:public std::enable_shared_from_this<Block>
+class Block
 {
 public:
-    Block(std::string_view content);
+    //Block()=default;
+    //Status Init(std::string_view content);
 
-    Block()=default;
-
+    explicit Block(const std::string& content);
+    ~Block()=default;
 
     friend class BlockConstIter;
     using Iter=BlockConstIter;
 
     Iter find(std::string_view key);
 
-    Iter begin() const;
+    [[nodiscard]] Iter begin();
 
-    Iter end() const;
+    [[nodiscard]] Iter end() ;
 
-    Iter lower_bound(std::string_view key) const;
+    Iter lower_bound(std::string_view key) ;
 
-    int32_t restartPoint(int id) const;
+    [[nodiscard]] int32_t restartPoint(int id) const;
 
-    std::string_view keyAtRestartPoint(int id) const;
+    [[nodiscard]] std::string_view keyAtRestartPoint(int id) const;
 
-    int Compare(std::string_view a,std::string_view b) const{
+    [[nodiscard]] static int Compare(std::string_view a,std::string_view b) {
         return a.compare(b);
+    }
+
+    [[nodiscard]] auto getData() const {
+        return data_;
     }
 private:
     std::string_view data_;
-    const char* data_end_;
-    std::size_t size_;
-    int32_t num_restart_;
+    //const char* data_;
+    const char* data_end_{};
+    std::size_t size_{};
+    int32_t num_restart_{};
 };
 
 }
