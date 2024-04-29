@@ -3,6 +3,7 @@
 #include "format.h"
 #include <cstddef>
 #include <memory>
+#include <utility>
 
 using namespace bokket;
 
@@ -170,13 +171,14 @@ SSTable::Iter SSTable::begin()
 
 
     //LOG_INFO("{},{}",data_block_->begin().key(),data_block_->begin().value());
-    return TwoLevelIterator(this,index_block_->begin(),data_block_->begin());
+    return {this,new BlockConstIter(index_block_->begin()),new BlockConstIter(data_block_->begin())};
     //return TwoLevelIterator(this,index_block_->begin(),&SSTable::ObtainBlockByIndex);
 }
 
 SSTable::Iter SSTable::end()
 {
-    return TwoLevelIterator();
+    return {};
+    //return TwoLevelIterator(this,new BlockConstIter(index_block_->end()),new BlockConstIter(data_block_->end()));
 }
 
 
@@ -196,31 +198,132 @@ Status SSTable::ObtainBlockByIndex(BlockHandle& handle,Block&& data_block) const
     return stat_;
 }
 
+Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it)
+{
+    BlockHandle handle;
+    auto index_value=it.value();
+    stat_=BlockHandle::DecodeFrom(index_value.data(),handle);
+
+    handle.DebugString();
+
+    if(!stat_)
+        return nullptr;
+
+    Block* block=nullptr;
+    LRUCachePolicy* cache= nullptr;
+
+    if(cache) {
+        // TODO
+
+    }
+
+    if(block== nullptr) {
+        std::string res;
+        res.resize(handle.size_);
+
+        LOG_INFO("{}, {}",handle.offset_,handle.size_);
+
+        stat_=file_->read(handle.offset_,handle.size_,&res);
+
+        LOG_INFO("{}",res);
+
+        if(stat_) {
+            if(res.length()<handle.size_)
+                stat_=Status::IOError("ReadBlockFromFile error");
+        }
+
+        if(!stat_)
+            return nullptr;
+
+        block_value_=res;
+
+        block=new Block(block_value_);
+
+        stat_=Status::OK();
+    }
+    return block;
+}
+
+
+TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator &rhs)
+                                  :table_(rhs.table_)
+{
+    if(rhs.valid()) {
+        LOG_INFO("TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator &rhs)");
+
+        data_iter_.reset(new BlockConstIter(*rhs.data_iter_));
+        index_iter_.reset(new BlockConstIter(*rhs.index_iter_));
+
+        table_ = rhs.table_;
+
+        //data_iter_=rhs.data_iter_;
+        //index_iter_=rhs.index_iter_;
+        //table_=rhs.table_;
+    }
+}
+
+TwoLevelIterator &TwoLevelIterator::operator=(const bokket::TwoLevelIterator &rhs) {
+    LOG_INFO("TwoLevelIterator::operator=");
+    if(*this!=rhs)
+    {
+
+        // if(rhs.data_iter_)
+
+        table_=rhs.table_;
+        
+        data_iter_ = std::make_unique<BlockConstIter>(*rhs.data_iter_);
+        index_iter_ = std::make_unique<BlockConstIter>(*rhs.index_iter_);
+    }
+
+    return *this;
+    // TwoLevelIterator tmp(rhs);
+    // std::swap(*this,tmp);
+    // return *this;
+}
+
+
+bool TwoLevelIterator::equal(const bokket::TwoLevelIterator &other) const {
+    if(!data_iter_ || !other.data_iter_)
+        return data_iter_.get()==other.data_iter_.get();
+
+    return *data_iter_==*other.data_iter_;
+}
+
+
 void TwoLevelIterator::increment()
 {
-        assert(valid());
+    assert(valid());
 
-//    data_iter_++;
-//    if(data_iter_==data_iter_.getContainer()->end()) {
-//        (*index_iter_)++;
-//        if((*index_iter_)==index_iter_->getContainer()->end())
-//        {
-//            TwoLevelIterator tmp;
-//            std::swap(*this,tmp);
-//        } else {
-//            auto block=table_->ObtainBlockByIndex(*index_iter_);
-//            TwoLevelIterator tmp(new BlockConstIter(block->begin()),
-//                                 new BlockConstIter((*index_iter_)),table_);
-//            std::swap(*this,tmp);
-//        }
-//    }
+    ++(*data_iter_);
+
+    if((*data_iter_)==data_iter_->getContainer()->end()) {
+        LOG_INFO("[  ]");
+
+        ++(*index_iter_);
+        
+        if((*index_iter_)==index_iter_->getContainer()->end()) {
+            LOG_INFO("?");
+
+            data_iter_=nullptr;
+            //index_iter_=nullptr;
+            //TwoLevelIterator tmp;
+            //*this=tmp;
+            //std::swap(*this,tmp);
+
+        } else {
+            LOG_INFO("?");
+
+            auto block=const_cast<SSTable*>(table_)->ObtainBlockByIndex(*index_iter_);
+            TwoLevelIterator tmp(const_cast<SSTable*>(table_),
+                                new BlockConstIter((*index_iter_)),new BlockConstIter(block->begin()));
+            std::swap(*this,tmp);
+        }
+    }
 }
-
 
 inline bool TwoLevelIterator::valid() const {
-    //return *this!=TwoLevelIterator();
+    return *this!=TwoLevelIterator();
 }
-
 
 // void TwoLevelIterator::ReadDataIter()
 // {
@@ -242,15 +345,3 @@ inline bool TwoLevelIterator::valid() const {
 
 //     // data_iter_=data_block.begin();
 // }
-
-
-
-
-
-
-
-
-
-                                  
-
-

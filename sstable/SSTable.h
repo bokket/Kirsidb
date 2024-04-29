@@ -26,7 +26,7 @@ class TwoLevelIterator;
 using TwoLevelIterFacade=
         IteratorFacadeNoValueType<TwoLevelIterator,ForwardIteratorTag, true>;
 
-class TwoLevelIterator
+class TwoLevelIterator:public TwoLevelIterFacade
 {
 
 public:
@@ -37,63 +37,46 @@ public:
         //                         ,index_iter_{index_iter}
         //                         ,data_iter_{}
         //                         ,block_function_(std::move(block_function))
-        TwoLevelIterator(SSTable* table,BlockConstIter&& index_iter,BlockConstIter&& data_iter)
+        TwoLevelIterator(SSTable* table,BlockConstIter* index_iter,BlockConstIter* data_iter)
+        //explicit TwoLevelIterator(SSTable* table,BlockConstIter&& index_iter,BlockConstIter&& data_iter)
                         :table_(table)
                         ,index_iter_{index_iter}
                         ,data_iter_{data_iter}
         {
             LOG_INFO("?");
-
-            //ReadDataIter();
         }
 
-        TwoLevelIterator()=default;
-
-        // TwoLevelIterator(const TwoLevelIterator &rhs) 
-        //                  :table_(rhs.table_) 
-        // {
-        //     if (rhs.index_iter_) 
-        //         index_iter_ = *rhs.index_iter_;
-        //     if (rhs.data_iter_) 
-        //         data_iter_ = *rhs.data_iter_;
-        // }
-
-        // TwoLevelIterator &operator=(TwoLevelIterator &&rhs) noexcept 
-        // {
-        //     if (this != &rhs) {
-        //         table_ = std::move(rhs.table_);
-        //         index_block_ = std::move(rhs.index_iter_);
-        //         data_iter_ = rhs.data_iter_;
-        //     }
-        //     return *this;
-        // }
-
-        TwoLevelIterator(TwoLevelIterator &&rhs) noexcept
-                        :table_(std::move(rhs.table_))
-                        ,index_iter_(rhs.index_iter_)
-                        ,data_iter_(rhs.data_iter_) 
-        {}
-
-        std::string_view Key() const {
-            LOG_INFO("{?}");
-            return data_iter_.key();
+        TwoLevelIterator()
+        {
+            LOG_INFO("?");
         }
 
-        std::string_view Value() const {
+        TwoLevelIterator(const TwoLevelIterator &rhs);
+
+        TwoLevelIterator& operator=(const TwoLevelIterator& rhs);
+
+        [[nodiscard]] std::string_view Key() const {
             LOG_INFO("{?}");
-            return data_iter_.value();
+            return data_iter_->key();
+        }
+
+        [[nodiscard]] std::string_view Value() const {
+            LOG_INFO("{?}");
+            return data_iter_->value();
         }
 
 public:
     void increment();
 
-   // bool equal(const TwoLevelIterator& other) const;
+    [[nodiscard]] bool equal(const TwoLevelIterator& other) const;
 
-    inline bool valid() const;
+    [[nodiscard]] inline bool valid() const;
 private:
-    BlockConstIter index_iter_;
-    BlockConstIter data_iter_;
-    SSTable* table_{};
+    // BlockConstIter index_iter_;
+    // BlockConstIter data_iter_;
+    std::unique_ptr<BlockConstIter> index_iter_;
+    std::unique_ptr<BlockConstIter> data_iter_;
+    const SSTable* table_{};
 
     //BlockFunction block_function_;
 };
@@ -114,6 +97,7 @@ public:
 
     Status ObtainBlockByIndex(BlockHandle& handle,Block&& data_block) const;
 
+    Block* ObtainBlockByIndex(const BlockConstIter& it);
 
     Status ReadFooterBlock(uint64_t file_size);
 
