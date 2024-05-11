@@ -38,9 +38,9 @@ public:
 
     ~Node() =default;
 
-    explicit Node(const Key &key, const Value &value, size_t level)
-            : key_{key}, value_{value}, level_{level}, next_{level_, nullptr} {
-        //next_.resize(level, nullptr);
+    explicit Node(const Key &key, const Value &value, int level)
+            : key_{key}, value_{value},level_(level) {
+        next_.resize(level, nullptr);
     }
 
     Key getKey() const {
@@ -51,9 +51,9 @@ public:
         return this->value_;
     }
 
-    size_t getLevel() const {
-        return this->level_;
-    }
+    // [[nodiscard]] size_t getLevel() const {
+    //     return this->level_;
+    // }
 
     void Unlink() {
         for (auto &p: next_) {
@@ -61,14 +61,14 @@ public:
         }
     }
 
-    std::size_t getSize() const {
+    [[nodiscard]] std::size_t getSize() const {
         return this->next_.size();
     }
 public:
     const Key key_;
     Value value_;
 
-    size_t level_;
+    int level_;
 
     std::vector<nodePtr> next_;
     //std::vector<Node *> next_;
@@ -81,8 +81,8 @@ class SkipList
 {
 public:
     //explicit SkipList(std::shared_ptr<DefaultAlloc> alloc);
-    explicit SkipList(size_t list_level);
-
+    //explicit SkipList(size_t list_level);
+    SkipList();
 
     void Insert(const Key &k,const Value & v);
 

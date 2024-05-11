@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "../SkipList/comparator.h"
 #include <random>
 
 namespace bokket
@@ -23,5 +24,18 @@ inline std::string RandomString(int len) {
             r[i] = RandomIn(' ', ' ' + 95);
         return r;
 }
+
+struct newByteCmp {
+    const Comparator *cmp;
+
+    newByteCmp()
+            : cmp(newByteComparator()) {}
+
+    bool operator()(std::string_view a, std::string_view b) const {
+        return cmp->Compare(a, b) < 0;
+    }
+};
+
+using kvMap=std::map<std::string,std::string,newByteCmp>;
 
 }

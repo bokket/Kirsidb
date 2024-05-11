@@ -10,8 +10,9 @@ using namespace bokket;
 
 
 template<typename Key,typename Value>
-SkipList<Key,Value>::SkipList(size_t list_level)
-                             :max_level_(list_level)
+// SkipList<Key,Value>::SkipList(size_t list_level)
+SkipList<Key,Value>::SkipList()
+                             :max_level_(1)
                              ,elementCount_(0)
 //SkipList<Key,Value>::SkipList(std::shared_ptr<DefaultAlloc> alloc)
 //                             :elementCount_(0)
@@ -24,7 +25,7 @@ SkipList<Key,Value>::SkipList(size_t list_level)
     LOG_INFO("skiplist head k:{},v:{}",k,v);
 //    head_ = From(k, v, max_level_={getHeightIncrease().value()});
 //    static_assert(max_level_==getHeightIncrease().value(),"SkipList max level Must EQ!");
-    head_= From(k,v,max_level_);
+    head_= From(k,v,kMaxLevelNum);
 //    std::cout<<head_.get()<< std::endl;
     LOG_INFO("SkipList level height is max_level {}\n "
              "getHeightIncrease() is {}",max_level_,getHeightIncrease().value());
@@ -63,7 +64,7 @@ std::optional<Value> SkipList<Key, Value>::Get(const Key &k) {
     std::shared_lock<std::shared_mutex> sl{mutex_};
     auto cur= this->head_;
 
-    for(ssize_t i= this->max_level_-1;i>=0;i--){
+    for(int i= this->max_level_-1;i>=0;i--){
 
         while(cur->next_[i]!= nullptr and cur->next_[i]->key_ < k) {
             cur=cur->next_[i];
@@ -93,14 +94,14 @@ bool SkipList<Key, Value>::Contains(const Key &k) {
 template<typename Key,typename Value>
 std::vector<nodePtr<Key, Value>> SkipList<Key, Value>::FindPrevNode(const Key &key) {
 //void SkipList<Key, Value>::FindPrevNode(const Key &key, std::vector<nodePtr<Key, Value>> &prev)  {
-    std::vector<nodePtr<Key,Value>> prev(this->max_level_, nullptr);
+    std::vector<nodePtr<Key,Value>> prev(kMaxLevelNum, nullptr);
     //printf("%s\n",prev);
 
-    LOG_INFO("max:{} | head_:{} | k:{}",max_level_,head_->getValue(),key);
+    LOG_INFO("max:{}  | k:{}",max_level_,key);
 
     LOG_INFO("here{}",head_->next_.size());
     nodePtr<Key,Value> cur=this->head_;
-    for (std::size_t i=max_level_-1; i-- > 0;) {
+    for (int i=getMaxLevel()-1; i>=0;--i) {
 
 
         while(cur->next_[i]!= nullptr and cur->next_[i]->key_<key) {
@@ -112,6 +113,8 @@ std::vector<nodePtr<Key, Value>> SkipList<Key, Value>::FindPrevNode(const Key &k
 
     }
     //std::cout<<prev[0].get()<< std::endl;
+    //Print()
+
     return prev;
 }
 
@@ -151,17 +154,27 @@ void SkipList<Key, Value>::Insert(const Key &k, const Value &v) {
     LOG_INFO("SkipList element count increase ,now count is {}",elementCount_);
 
     auto lv=getRandomLevel();
-//    LOG_INFO("lv:{}",lv);
+    LOG_INFO("lv:{}",lv);
+    auto pre= FindPrevNode(k);
+
+    if(lv>getMaxLevel())
+    {
+        for(int i=getMaxLevel();i<lv;++i)
+            pre[i]=head_;
+        
+        max_level_=lv;
+    }
+
     //max_level_=std::max(lv,max_level_);
     auto newNode= From(k,v,lv);
 
     //TODO!! 优化
-    auto pre= FindPrevNode(k);
+    
 //    std::vector<nodePtr<Key,Value>> pre{max_level_, nullptr};
 //    FindPrevNode(k,pre);
     //std::cout<<newNode->getLevel()<< std::endl;
 
-    for (std::size_t i=newNode->getLevel(); i-- > 0;) {
+    for (int  i=newNode->level_-1;i>=0 ;--i) {
         if(pre[i]== nullptr) {
             newNode->next_[i]= nullptr;
             head_->next_[i]=newNode;
@@ -172,6 +185,56 @@ void SkipList<Key, Value>::Insert(const Key &k, const Value &v) {
 
     //Print();
 }
+
+
+// template<typename Key,typename Value>
+// void SkipList<Key, Value>::Insert(const Key &k, const Value &v) {
+
+//     if(Contains(k)) {
+//         LOG_WARN("Key has been inserted,Key={}",k);
+//         return;
+//     }
+
+//     std::unique_lock<std::shared_mutex> ul{mutex_};
+
+//     ++elementCount_;
+//     LOG_INFO("SkipList element count increase ,now count is {}",elementCount_);
+
+//     auto pre= FindPrevNode(k);
+
+//     auto lv=getRandomLevel();
+
+//     LOG_INFO("{}",lv);
+
+//     if(lv>getMaxLevel())
+//     {
+//         for(int i=getMaxLevel();i<lv;++i)
+//             pre[i]=head_;
+        
+//         max_level_=lv;
+//     }
+
+// //    LOG_INFO("lv:{}",lv);
+//     //max_level_=std::max(lv,max_level_);
+//     auto newNode= From(k,v,lv);
+
+//     //TODO!! 优化
+   
+// //    std::vector<nodePtr<Key,Value>> pre{max_level_, nullptr};
+// //    FindPrevNode(k,pre);
+//     //std::cout<<newNode->getLevel()<< std::endl;
+
+//     for (int i=newNode->level_-1;i>=0;--i ) {
+//         if(pre[i]== nullptr) {
+//             newNode->next_[i]= nullptr;
+//             head_->next_[i]=newNode;
+//         }
+//         newNode->next_[i]=pre[i]->next_[i];
+//         pre[i]->next_[i]=newNode;
+//     }
+
+//     //Print();
+// }
 
 //TODO Need trun?
 template<typename Key,typename Value>
@@ -223,11 +286,24 @@ size_t SkipList<Key, Value>::getRandomLevel() {
 //    LOG_INFO("k:{}",k);
 //    return k;
 
-    size_t k=1;
-    while(rand()%2) {
-        k++;
+    // size_t k=1;
+    // while(rand()%2) {
+    //     k++;
+    // }
+    // return std::min(k, this->max_level_);
+
+    static const unsigned int kBranching = 4;  // 控制高度的参数，可以根据需要调整
+    int height = 1;
+    
+    std::random_device rd;  // 用于生成随机数种子
+    std::mt19937 gen(rd()); // 使用 Mersenne Twister 引擎
+    std::uniform_real_distribution<double> dis(0.0, 1.0); // 均匀分布的随机数生成器
+
+    while (height < kMaxLevelNum && dis(gen) < 1.0 / kBranching) {
+        height++;
     }
-    return std::min(k, this->max_level_);
+
+    return height;
 }
 
 template<typename Key,typename Value>
@@ -240,15 +316,45 @@ void SkipList<Key, Value>::Print() {
 //    }
 //    std::cout << "============= DEBUG =============" << std::endl;
 
-    for(ssize_t i=max_level_-1;i>=0;--i) {
-        printf("Level %ld: \n",i);
-        auto p= this->head_->next_[i];
-        while(p!= nullptr){
-            std::cout<<"Key: "<<p->getKey()<<"\t"<<"Value: "<<p->getValue()<<" ";
-            p=p->next_[i];
+    // for(ssize_t i=max_level_-1;i>=0;--i) {
+    //     printf("Level %ld: \n",i);
+    //     auto p= this->head_->next_[i];
+    //     while(p!= nullptr){
+    //         std::cout<<"Key: "<<p->getKey()<<"\t"<<"Value: "<<p->getValue()<<" ";
+    //         p=p->next_[i];
+    //     }
+    //     std::cout<<std::endl;
+    // }
+     Node<Key, Value>* ptr = nullptr;
+    static const int PRINT_WIDTH = 7;
+
+     for (int i = getMaxLevel()-1; i >= 0; --i) {
+        // auto p= head_->next_[i];
+        // while(p!= nullptr){
+        //     //std::cout<<"Key: "<<p->getKey()<<"\t"<<"Value: "<<p->getValue()<<" ";
+        
+        //     std::cout << std::right << std::setw(PRINT_WIDTH) << "->" + std::to_string(head_->next_[i]->key_) + " |:";
+        //     p=p->next_[i];
+        // }
+
+        // std::cout << std::right << std::setw(PRINT_WIDTH) << "->" + std::to_string(head_->next_[i]->key_) + " |:";
+        auto ptr = head_->next_[0];
+        //LOG_INFO("{}",ptr->level_ );
+        printf("level: %d: ", i);
+        while (ptr) {
+            if (ptr->level_ > i) {
+                std::cout << std::right << std::setw(PRINT_WIDTH) << ptr->key_;
+                if (ptr->next_[i]) {
+                    std::cout << std::left << std::setw(PRINT_WIDTH) << " (->" + std::to_string(ptr->next_[i]->key_) + ")";
+                }
+            } else {
+                std::cout << std::right << std::setw(PRINT_WIDTH * 2) << " ";
+            }
+            ptr = ptr->next_[0];
         }
-        std::cout<<std::endl;
+        std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 template<typename Key,typename Value>

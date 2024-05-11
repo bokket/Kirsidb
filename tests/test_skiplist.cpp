@@ -12,7 +12,7 @@ using namespace std;
 using namespace bokket;
 
 bool test_inset(size_t list_level=12,size_t  element_count=10) {
-    SkipList<int,int> *list=new SkipList<int,int>{list_level};
+    auto *list=new SkipList<int,int>;
 
     auto start=std::chrono::high_resolution_clock::now();
 
@@ -37,17 +37,17 @@ bool test_inset(size_t list_level=12,size_t  element_count=10) {
         //LOG_INFO("v{} | k {}",v,k);
     }
 
-    iter->MoveToLevel(2);
-    LOG_INFO("size:{}",iter->Size());
-    auto s=iter->Size();
-    for (size_t i=0;i<s;++i) {
-        LOG_INFO("i:{}",iter->Size());
+    // iter->MoveToLevel(2);
+    // LOG_INFO("size:{}",iter->Size());
+    // auto s=iter->Size();
+    // for (size_t i=0;i<s;++i) {
+    //     LOG_INFO("i:{}",iter->Size());
 
-        auto v=iter->value();
-        auto k=iter->key();
-        iter->Next();
+    //     auto v=iter->value();
+    //     auto k=iter->key();
+    //     iter->Next();
 
-    }
+    // }
 
 
     //std::shared_ptr<SkipList<int,int>::SkipListIterator> iter;
@@ -74,7 +74,7 @@ bool test_inset(size_t list_level=12,size_t  element_count=10) {
 bool test_inset_string(size_t list_level=12,size_t  element_count=10) {
 
 
-    SkipList<int ,string> *list=new SkipList<int ,string>{list_level};
+    auto *list=new SkipList<int ,string>;
 
     auto start=std::chrono::high_resolution_clock::now();
 
@@ -84,17 +84,20 @@ bool test_inset_string(size_t list_level=12,size_t  element_count=10) {
 
     list->Print();
 
-    SkipList<int,string>::SkipListIterator* iter=new SkipList<int ,string>::SkipListIterator{list};
+    auto* iter=new SkipList<int ,string>::SkipListIterator{list};
 
     iter->MoveToFirst();
-    for (auto i=0;i<element_count;++i) {
+    LOG_INFO("size:{}",iter->Size());
+    for (auto i=0;i<iter->Size();++i) {
         auto &v=iter->value();
         auto &k=iter->key();
+
+        LOG_INFO("{},{}",k,v);
         iter->Next();
 
     }
 
-    iter->MoveToLevel(2);
+    iter->MoveToLevel(1);
     LOG_INFO("size:{}",iter->Size());
     auto s=iter->Size();
     for (size_t i=0;i<s;++i) {
@@ -102,12 +105,14 @@ bool test_inset_string(size_t list_level=12,size_t  element_count=10) {
         auto v=iter->value();
         auto k=iter->key();
 
-        LOG_INFO("v: {}",v);
-        LOG_INFO("k: {}",k);
+        LOG_INFO("k: {} v: {}",k,v);
 
         iter->Next();
 
     }
+
+    delete iter;
+    delete list;
 
     auto end=std::chrono::high_resolution_clock::now();
 
