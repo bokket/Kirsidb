@@ -13,6 +13,7 @@ SSTableBuilder::SSTableBuilder(const Options *options, WritableFile *file)
                              ,file_(file)
                              ,pending_index_entry_{false}
                              ,num_entries_{0}
+                             ,block_offset_{0}
 {}
 
 // *start:    helloWorld
@@ -84,7 +85,7 @@ Status SSTableBuilder::Add(std::string_view key, std::string_view value) {
         pending_index_entry_= false;
     }
 
-    num_entries_++;
+    ++num_entries_;
     data_block_.add(key,value);
     last_key_.assign(key);
 
@@ -102,48 +103,94 @@ Status SSTableBuilder::Finish() {
     if(!s)
         return s;
 
-    index_block_.add(last_key_,pending_handle_.EncodeToString());
-    s= writeBlock(&index_block_);
+    BlockHandle index_handle;
+
+    if(pending_index_entry_) {
+
+        auto index_value=pending_handle_.EncodeToString();
+
+        pending_handle_.DebugString();
+        LOG_INFO("index_value:{}",index_value);
+
+        index_block_.add(last_key_,index_value);
+        pending_index_entry_= false;
+    }
+
+//    index_block_.add(last_key_,pending_handle_.EncodeToString());
+    s= writeBlock(&index_block_,index_handle);
     if(!s)
         return s;
 
     Footer footer;
-    footer.index_block_=pending_handle_;
+    footer.index_block_=index_handle;
+
     s=file_->append(footer.EncodeToString());
 
-    return Status::OK();
-}
+    footer.DebugString();
 
-Status SSTableBuilder::writeBlock(bokket::BlockBuilder *block) {
-    auto block_buf=block->final();
 
-    LOG_INFO("{}",block_buf);
 
-    auto s=file_->append(block_buf);
-    if(!s)
-        return s;
-
-    //crc32?
-
-    uint64_t block_size=block_buf.length();
-
-    pending_handle_.DebugString();
-
-    pending_handle_.size_=block_size;
-    pending_handle_.offset_+=block_size;
-
-    pending_handle_.DebugString();
+    file_->close();
 
     return Status::OK();
 }
 
 Status SSTableBuilder::flush() {
-    auto s= writeBlock(&data_block_);
+    auto s= writeBlock(&data_block_,pending_handle_);
     if(!s)
         return s;
 
     pending_index_entry_= true;
-    data_block_.clear();
+
+    s=file_->flush();
+
+    if(!s)
+        return s;
+
+    //data_block_.clear();
 
     return Status::OK();
+}
+
+Status SSTableBuilder::writeBlock(BlockBuilder *block, BlockHandle &handle) {
+    auto block_buf=block->final();
+
+    LOG_INFO("{}",block_buf);
+
+    writeBytesBlock(block_buf,handle);
+
+    data_block_.clear();
+
+//    auto s=file_->append(block_buf);
+//    if(!s)
+//        return s;
+
+    //crc32?
+
+//    uint64_t block_size=block_buf.length();
+//
+//    pending_handle_.DebugString();
+//
+//    pending_handle_.size_=block_size;
+//    pending_handle_.offset_+=block_size;
+//
+//    pending_handle_.DebugString();
+
+    return Status::OK();
+}
+
+void SSTableBuilder::writeBytesBlock(std::string_view data, BlockHandle &handle) {
+    //bool compress=false;
+
+    handle.offset_=block_offset_;
+    handle.size_=data.size();
+
+    LOG_INFO("{},{}",handle.offset_,handle.size_);
+
+    LOG_INFO("{}",data);
+    file_->append(data);
+
+    block_offset_+=handle.size_;
+
+    LOG_INFO("{}",block_offset_);
 }

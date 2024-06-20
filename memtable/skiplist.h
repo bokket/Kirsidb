@@ -25,9 +25,12 @@ class SkipList
 {
 public:
     class Node;
+
+
+    using nodePtr=std::shared_ptr<Node>;
 public:
     explicit SkipList(Comparator cmp);
-    ~SkipList();
+    //~SkipList();
 public:
     struct SkipListIterator;
 public:
@@ -41,11 +44,11 @@ public:
                             :list_{list}
                             ,node_{nullptr}
             {
-                if(list_!=nullptr)
-                {
-                    LOG_INFO("list! nullptr");
-                    node_=list_->head_->next_[0];
-                }
+                // if(list_!=nullptr)
+                // {
+                //     LOG_INFO("list! nullptr");
+                //     node_=list_->head_->next_[0];
+                // }
             }
 
             // explicit SkipListIterator(Node* next=nullptr)
@@ -60,14 +63,21 @@ public:
 
             }
 
-            ~SkipListIterator()
+            explicit SkipListIterator(const SkipList* list,nodePtr node)
+                                     :list_{list}
+                                     ,node_{std::move(node)}
             {
-                if(node_!=nullptr)
-                {
-                    LOG_INFO("?");
-                    delete node_;
-                }
+
             }
+
+            // ~SkipListIterator()
+            // {
+            //     if(node_!=nullptr)
+            //     {
+            //         LOG_INFO("?");
+            //         delete node_;
+            //     }
+            // }
 
             SkipListIterator(const SkipListIterator& other)
             {
@@ -89,6 +99,27 @@ public:
                 return node_==other.node_;
             }
 
+            void Next()
+            {
+                assert(Valid());
+                node_=node_->next_[0];
+            }
+
+            void Seek(const Key& target)
+            {
+                auto iter=list_->Find(target);
+                assert(Valid());
+                node_=iter.node_;
+
+                //LOG_INFO("{}",node_->getKey());
+            }
+
+            void SeekToFirst() 
+            {
+                node_=list_->head_->next_[0];
+                Valid();
+            }
+
         private:
             void increment() {
                 assert(Valid());
@@ -97,15 +128,16 @@ public:
 
         private:
             const SkipList* list_;
-            Node* node_;
+            //Node* node_;
+            nodePtr node_;
     };
 
 public:
     using Iter=SkipListIterator;
 
-    //Iter Insert(const Key& key);
+    Iter Insert(const Key& key);
 
-    void Insert(const Key& key);
+    //void Insert(const Key& key);
 
     bool Contains(const Key& key) const;
 
@@ -120,15 +152,20 @@ public:
 private:
     [[nodiscard]] inline int GetMaxHeight() const;
 
-    std::vector<Node*> FindPrevNode(const Key &key);
+    std::vector<nodePtr> FindPrevNode(const Key &key);
+    //std::vector<Node*> FindPrevNode(const Key &key);
 
-    inline Node* From(const Key&,int level);
+    //inline Node* From(const Key&,int level);
+    inline nodePtr From(const Key&,int level);
+
 
     inline int getRandomLevel();
 private:
     constexpr static int kMaxLevelNum=12;
 
-    Node* const head_;
+    //Node* const head_;
+    nodePtr head_;
+
 
     const Comparator cmp_;
 
@@ -142,11 +179,13 @@ template<typename Key,class Comparator>
 class SkipList<Key,Comparator>::Node
 {
 public:    
+    using nodePtr=std::shared_ptr<Node>;
     const Key key_;
     //Value value_;
 
 
-    std::vector<Node*> next_;
+    //std::vector<Node*> next_;
+    std::vector<nodePtr> next_;
 
     explicit Node(const Key& k,int level)
 //    explicit Node(const Key& k,const Value& v,int level)
@@ -156,12 +195,16 @@ public:
         next_.resize(level,nullptr);
     }
 
-    ~Node()
-    {
-        for (auto &p: next_) {
-            p = nullptr;
-        }
-    }
+    // ~Node()
+    // {
+    //     for (auto &p: next_) {
+    //         if(p!=nullptr)
+    //         {
+    //             LOG_INFO("?");
+    //             delete p;
+    //         }
+    //     }
+    // }
 
     inline int getLevel()
     {

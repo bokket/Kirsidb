@@ -3,9 +3,9 @@
 //
 
 #pragma once
+#include <random>
 
 #include "../SkipList/comparator.h"
-#include <random>
 
 namespace bokket
 {

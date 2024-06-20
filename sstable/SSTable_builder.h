@@ -8,13 +8,14 @@
 
 #include "../file/writableFile.h"
 #include "./footer.h"
-#include "./block_iter.h"
+#include "./block_builder.h"
 #include "./Options.h"
 
 namespace bokket
 {
 
-class Block;
+class BlockBuilder;
+
 class SSTableBuilder
 {
 public:
@@ -27,11 +28,13 @@ public:
 
     void FindShortest(std::string& start,std::string_view limit) const;
 
-    size_t NumEntries() const;
+    [[nodiscard]] size_t NumEntries() const;
 private:
     Status flush();
 
-    Status writeBlock(BlockBuilder* block);
+    Status writeBlock(BlockBuilder* block,BlockHandle& handle);
+
+    void writeBytesBlock(std::string_view data,BlockHandle& handle);
 
 private:
     BlockBuilder data_block_;
@@ -44,6 +47,7 @@ private:
     BlockHandle pending_handle_;
 
     size_t num_entries_;
+    uint64_t block_offset_;
 
     const Options* options_;
 };

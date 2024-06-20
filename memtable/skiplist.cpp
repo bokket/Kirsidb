@@ -9,7 +9,7 @@ typename SkipList<Key, Comparator>::Iter SkipList<Key,Comparator>::Begin() const
 {
     //return Iter(this,head_->next_[0]);
     LOG_INFO("begin");
-    return Iter{this};
+    return Iter{this,head_->next_[0]};
 }
 
 
@@ -26,24 +26,27 @@ SkipList<Key,Comparator>::SkipList(Comparator cmp)
                                         ,head_{nullptr}
                                         ,max_level_{1}
 {
-    (*const_cast<Node**>(&head_))=From(0, kMaxLevelNum);
+    //(*const_cast<Node**>(&head_))=From(0, kMaxLevelNum);
+    head_=From(0, kMaxLevelNum);
 }
 
-template<typename Key,class Comparator>
-SkipList<Key,Comparator>::~SkipList()
-{
-    if(head_!=nullptr)
-    {
-        LOG_INFO("?");
-        delete head_;
-    }
-}
+// template<typename Key,class Comparator>
+// SkipList<Key,Comparator>::~SkipList()
+// {
+//     if(head_!=nullptr)
+//     {
+//         LOG_INFO("?");
+//         delete head_;
+//     }
+// }
 
 
 template<typename Key,class Comparator>
-typename SkipList<Key,Comparator>::Node* SkipList<Key,Comparator>::From(const Key& k,int level) {
+//typename SkipList<Key,Comparator>::Node* SkipList<Key,Comparator>::From(const Key& k,int level) {
+typename SkipList<Key,Comparator>::nodePtr SkipList<Key,Comparator>::From(const Key& k,int level) {
     LOG_INFO("skiplist new node k:{}",k);
-    return new Node(k,level);
+    //return new Node(k,level);
+    return nodePtr(new Node(k,level));
 }
 
 // Insert given key and value in skip list
@@ -67,13 +70,17 @@ level 0         1   4   9  10          30   40  | 50 |  60      70       100
                                                 +----+
 */
 template<typename Key,class Comparator>
-void SkipList<Key,Comparator>::Insert(const Key& key)
+//typename SkipList<Key, Comparator>::Iter
+typename SkipList<Key, Comparator>::Iter SkipList<Key,Comparator>::Insert(const Key& key)
 {
     std::unique_lock<std::shared_mutex> ul{mutex_};
 
-    std::vector<Node*> prev(kMaxLevelNum, nullptr);
+    LOG_INFO("{}",key);
 
-    Node* cur=head_;
+    //std::vector<Node*> prev(kMaxLevelNum, nullptr);
+    std::vector<nodePtr> prev(kMaxLevelNum, nullptr);
+
+    auto cur=head_;
 
     for(int i=GetMaxHeight()-1;i>=0;--i)
     {
@@ -86,8 +93,8 @@ void SkipList<Key,Comparator>::Insert(const Key& key)
 
     cur=cur->next_[0];
     if(cur!=nullptr and cmp_(cur->getKey(),key)==0)
-        return;
-        //return Iter{this,cur};
+        //return;
+        return Iter{this,cur};
 
     assert(!Contains(key));
     
@@ -116,16 +123,17 @@ void SkipList<Key,Comparator>::Insert(const Key& key)
         prev[i]->next_[i]=newNode;
     }
 
-    //return Iter{this,newNode};
+    return Iter{this,newNode};
 }
 
 
 template<typename Key,class Comparator>
-std::vector<typename SkipList<Key,Comparator>::Node*> SkipList<Key,Comparator>::FindPrevNode(const Key &key) {
-    std::vector<Node*> prev(kMaxLevelNum,nullptr);
+//std::vector<typename SkipList<Key,Comparator>::Node*> SkipList<Key,Comparator>::FindPrevNode(const Key &key) {
+std::vector<typename SkipList<Key,Comparator>::nodePtr> SkipList<Key,Comparator>::FindPrevNode(const Key &key) {
+    //std::vector<Node*> prev(kMaxLevelNum,nullptr);
+    std::vector<nodePtr> prev(kMaxLevelNum,nullptr);
 
-
-    Node* cur=head_;
+    auto cur=head_;
 
     for(int i=GetMaxHeight()-1;i>=0;--i)
     {
@@ -150,7 +158,7 @@ template<typename Key,class Comparator>
 typename SkipList<Key, Comparator>::Iter SkipList<Key,Comparator>::Find(const Key& target) const
 {
     //std::shared_lock<std::shared_mutex> sl{mutex_};
-
+    LOG_INFO("{}",target);
     auto cur=head_;
 
     for(ssize_t i=GetMaxHeight()-1;i>=0;--i)
@@ -162,7 +170,8 @@ typename SkipList<Key, Comparator>::Iter SkipList<Key,Comparator>::Find(const Ke
             next=cur->next_[i];
         }
         if(next!=nullptr and cmp_(next->getKey(),target)==0)
-        {    
+        {   
+
             LOG_INFO("Get key:{}",cur->next_[i]->getKey());
             return Iter{this,next};
         }
@@ -177,7 +186,7 @@ template<typename Key,class Comparator>
 void SkipList<Key,Comparator>::Print() {
     std::shared_lock<std::shared_mutex> sl{mutex_};
 
-    Node* ptr = nullptr;
+    //Node* ptr = nullptr;
     static const int PRINT_WIDTH = 3;
 
      for (int i = GetMaxHeight()-1; i >= 0; --i) {
@@ -194,7 +203,7 @@ void SkipList<Key,Comparator>::Print() {
                 if (ptr->next_[i]) {
                     std::cout << std::left << std::setw(PRINT_WIDTH) << " (->" + std::to_string(ptr->next_[i]->key_) + ")";
                 } else {
-                    std::cout << std::right << std::setw(PRINT_WIDTH * 2) << "| nullptr";
+                    std::cout << std::right << std::setw(PRINT_WIDTH) << "| nullptr";
                 }
                 
             } else {

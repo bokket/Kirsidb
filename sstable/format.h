@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+
+#include "../Log/Log.h"
 #include "../db/status.h"
 
 namespace bokket
@@ -28,9 +30,11 @@ struct BlockHandle {
 
     std::string EncodeToString() const;
 
-    static DB DecodeFrom(const char* input, BlockHandle& handle);
+    static Status DecodeFrom(const char* input, BlockHandle& handle);
 
     std::string DebugString(const BlockHandle& handle);
+
+    void DebugString();
 
     uint64_t get_offset_info_size() {
         return sizeof(size_)+sizeof(offset_);

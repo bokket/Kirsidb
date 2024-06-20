@@ -14,11 +14,19 @@ TEST(footer,encode)
 {
     BlockHandle metaBlock{1,2};
     BlockHandle indexBlock{3,4};
+
     Footer footer{metaBlock,indexBlock};
-    string_view s=footer.EncodeToString();
-    footer.DecodeFrom(s,footer);
+    std::string s=footer.EncodeToString();
+
+    LOG_INFO("s:{}",s);
+
+    //std::string_view b=s;
+    auto status=footer.DecodeFrom(s,footer);
+
+    LOG_INFO("{}",status.ToString());
 
     footer.DebugString();
+//    LOG_INFO("{}",footer.DebugString());
 }
 
 int main(int argc, char **argv) {

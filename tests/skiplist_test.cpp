@@ -69,10 +69,13 @@ TEST(SkipListTest, Insert)
 
    for(int i=0;i<N;++i)
    {
-      Key key=RandomIn(0, 1 << 4);
+      Key key=RandomIn(0, 1 << 4)%R;
     
       if(keys.insert(key).second)
-        list->Insert(key);
+      {
+         auto it=list->Insert(key);
+          LOG_INFO("{}",it.key());
+      }
    }
 
    list->Print();
@@ -85,7 +88,53 @@ TEST(SkipListTest, Insert)
       EXPECT_EQ(keys.count(i), 0);
     }
    }
-   delete list;
+
+   // Simple iterator tests
+   {
+      SkipList<Key, Comparator>::SkipListIterator iter(list);
+      EXPECT_FALSE(iter.Valid());
+
+
+
+      auto begin=list->Begin();
+      EXPECT_TRUE(begin.Valid());
+
+      EXPECT_EQ(*(keys.begin()), begin.key());
+
+      begin.Next();
+   
+      auto end=list->End();
+      EXPECT_FALSE(iter.Valid());
+
+      auto find=list->Find(0);
+       EXPECT_TRUE(find.Valid());
+
+      EXPECT_EQ(*(keys.begin()), find.key());
+   }
+
+    // Forward iteration test
+
+    for(int i=0;i<R;i++)
+    {
+      auto it=list->Find(i);
+
+      if(it!=list->End())
+      {
+          LOG_INFO("{}",it.key());
+      }
+      
+    }
+
+    auto begin=list->Begin();
+    LOG_INFO("{}",begin.key());
+
+    begin.Next();
+    LOG_INFO("{}",begin.key());
+
+    begin.Seek(-1);
+    LOG_INFO("{}",begin.key());
+    delete list;
+
 }
 
 

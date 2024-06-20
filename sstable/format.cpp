@@ -19,14 +19,21 @@ std::string BlockHandle::EncodeToString() const {
     return s;
 }
 
-DB BlockHandle::DecodeFrom(const char *input, bokket::BlockHandle &handle) {
+Status BlockHandle::DecodeFrom(const char *input, BlockHandle &handle) {
     handle.offset_= DecodeFixed64(input);
     handle.size_= DecodeFixed64(input+8);
-    return DB::OK;
+    return Status::OK();
 }
 
-std::string BlockHandle::DebugString(const bokket::BlockHandle &handle) {
+std::string BlockHandle::DebugString(const BlockHandle &handle) {
     return "[offset_: offset = "+
             std::to_string(handle.offset_) +
             ", size = "+std::to_string(handle.size_)+ " ]";
+}
+
+void BlockHandle::DebugString() {
+    LOG_INFO( "[offset_: offset = {} , size = {} ]" ,
+              std::to_string(offset_)  ,
+              std::to_string(size_));
+    return ;
 }

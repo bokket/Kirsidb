@@ -19,7 +19,7 @@ void BlockBuilder::add(std::string_view key, std::string_view value) {
 
     //RESTART_INTERVAL
 
-    if (record_num_ % 2 == 0) {
+    if (record_num_ % 10== 0) {
         need = true;
         LOG_INFO("restart_size:{}", restart_size());
         restarts_.emplace_back(static_cast<int32_t>(data_.size()));
@@ -68,7 +68,7 @@ void BlockBuilder::add(std::string_view key, std::string_view value) {
     //return DB::OK;
 }
 
-DB BlockBuilder::finish() {
+Status BlockBuilder::finish() {
     //int restart_point_num=static_cast<int>((record_num_-0.5)/16)+1;
     int restart_point_num=static_cast<int>(restarts_.size());
     int last_offset=static_cast<int>(data_.size());
@@ -94,10 +94,10 @@ DB BlockBuilder::finish() {
     }
     LOG_INFO("restart_point_num:{}",restart_point_num);
     PutFixed32(data_,restart_point_num);
-    return DB::OK;
+    return Status::OK();
 }
 
-DB BlockBuilder::final(std::string& result) {
+Status BlockBuilder::final(std::string& result) {
     int restarts_len=static_cast<int>(restarts_.size());
 
     for(int i=0;i<restarts_len;++i) {
@@ -108,7 +108,7 @@ DB BlockBuilder::final(std::string& result) {
     PutFixed32(data_,restarts_len);
     result=std::move(data_);
 
-    return DB::OK;
+    return Status::OK();
 }
 
 std::string_view BlockBuilder::final() {

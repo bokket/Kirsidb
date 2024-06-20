@@ -38,9 +38,9 @@ public:
 
     void add(std::string_view key,std::string_view value);
 
-    DB finish();
+    Status finish();
 
-    DB final(std::string& result);
+    Status final(std::string& result);
 
     std::string_view final();
 

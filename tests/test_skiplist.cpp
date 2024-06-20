@@ -5,7 +5,7 @@
 #include <chrono>
 
 #include "../SkipList/skiplist.h"
-#include "../SkipList/skiplist.cpp"
+
 #include "../Log/Log.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ bool test_inset(size_t list_level=12,size_t  element_count=10) {
 
 
 
-    SkipList<int,int>::SkipListIterator* iter=new SkipList<int,int>::SkipListIterator{list};
+    auto* iter=new SkipList<int,int>::SkipListIterator{list};
 
     iter->MoveToFirst();
     for (auto i=0;i<element_count;++i) {

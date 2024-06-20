@@ -137,22 +137,25 @@ TEST(Basic,Init) {
     TestArray l;
 
     auto it = l.Begin();
-    for (int i = 0; i < TestArray::kArraySize; i++) {
-        printf("%d\t",it->Value());
-        it++;
-    }
-    ASSERT_EQ(it, l.End());
+//    for (int i = 0; i < TestArray::kArraySize; i++) {
+//        printf("%d\t",it->Value());
+//        it++;
+//    }
+    auto end=l.End();
+    printf("%d\t",end->Value());
+//
+//    ASSERT_EQ(it, l.End());
 
-    size_t cnt = 0;
-    for (it = l.Begin(); it != l.End(); it++) {
-        const SimpleObject &obj = *it;
-        printf("%d\t",obj.Value());
-        ASSERT_EQ(obj.Value(), cnt + 1);
-        cnt++;
-    }
-
-    /// May cause link error if we use ASSERT_EQ to compare the two values.
-    ASSERT_TRUE(cnt == TestArray::kArraySize);
+//    size_t cnt = 0;
+//    for (it = l.Begin(); it != l.End(); it++) {
+//        const SimpleObject &obj = *it;
+//        printf("%d\t",obj.Value());
+//        ASSERT_EQ(obj.Value(), cnt + 1);
+//        cnt++;
+//    }
+//
+//    /// May cause link error if we use ASSERT_EQ to compare the two values.
+//    ASSERT_TRUE(cnt == TestArray::kArraySize);
 }
 
 

@@ -11,29 +11,41 @@ void Footer::EncodeTo(std::string &dst) {
 }
 
 std::string Footer::EncodeToString() const {
+
     std::string s{index_block_.EncodeToString()+meta_block_.EncodeToString()};
 
-    LOG_INFO("Footer:{}",s);
+    LOG_INFO("Footer:{} {}",s,s.size());
 
     assert(s.length()<=40);
 
-    s.resize(48);
+    //s.resize(48);
+
+
 
     return s;
 }
 
-DB Footer::DecodeFrom(std::string_view &input,Footer& footer) {
+Status Footer::DecodeFrom(std::string_view &input,Footer& footer) {
+
+
     auto s= BlockHandle::DecodeFrom(input.data(),footer.index_block_);
-    if(s==DB::OK) {
-        s= BlockHandle::DecodeFrom(input.data(),footer.meta_block_);
+    if(!s) [[unlikely]] {
+        return Status::Corruption("Footer::DecodeFrom error");
     }
+
+    s= BlockHandle::DecodeFrom(input.data()+16,footer.meta_block_);
+
     return s;
 }
 
-std::string Footer::DebugString() {
-    return "[meta_block: offset = " +
-           std::to_string(meta_block_.offset_) +
-           ", size = " + std::to_string(meta_block_.size_) + " ], " +
-           "[index_block: offset = " + std::to_string(index_block_.offset_) +
-           ", size = " + std::to_string(index_block_.size_) + " ]";
+void Footer::DebugString() {
+    LOG_INFO( "[meta_block: offset = {}, size = {} ], [index_block: offset = {}, size = {} ]" ,
+           std::to_string(meta_block_.offset_) ,std::to_string(meta_block_.size_)  ,
+           std::to_string(index_block_.offset_) ,
+           std::to_string(index_block_.size_) );
+
+    meta_block_.DebugString();
+    index_block_.DebugString();
+
+    return ;
 }
