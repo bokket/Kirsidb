@@ -1,9 +1,4 @@
 #include "SSTable.h"
-#include <boost/smart_ptr/intrusive_ptr.hpp>
-#include <memory>
-#include <string_view>
-#include <utility>
-#include "block_iter.h"
 
 using namespace bokket;
 
@@ -14,10 +9,7 @@ SSTable::SSTable(ReadableFile* file)
 {}
 
 SSTable::~SSTable() {
-     
-    //LOG_INFO("{?}");
     delete file_;
-    
 }
 
 SSTable* SSTable::Open(ReadableFile* file, uint64_t file_size) {
@@ -116,6 +108,32 @@ SSTable::Iter SSTable::find(std::string_view key) const {
     }
 
     return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
+}
+
+Status SSTable::find(std::string_view key,std::string& res) const {
+
+    auto index_iter = index_block_->find(key);
+
+    if (index_iter == index_block_->end()) {
+        //return end();
+    }
+
+    auto block = ObtainBlockByIndex(index_iter);
+
+    if (!block) {
+        //return end();
+    }
+
+    auto block_iter = block->find(key);
+    if (block_iter == block->end()) {
+        //return end();
+    }
+
+    res=block_iter.value();
+
+    delete block;
+
+    return Status::OK();
 }
 
 Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it) const {

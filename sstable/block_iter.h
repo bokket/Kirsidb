@@ -3,12 +3,13 @@
 //
 #pragma once
 
-#include <memory>
 #include <string>
-#include <algorithm>
 #include <string_view>
 
-#include "./block_builder.h"
+#include "./coding.h"
+
+#include "../Log/Log.h"
+#include "../db/status.h"
 #include "../iterator/iterator_trait.h"
 
 namespace bokket {
@@ -26,11 +27,7 @@ class BlockConstIter : public BlockIterFacade
 
 public:
     friend class Block;
-
-    //    using Iter_ptr=typename std::pointer_traits<Ptr>::template
-    //    rebind<Block>;
-    // class Block;
-    BlockConstIter(const Block *container, const char *p, uint32_t restart);
+    friend class IteratorCoreAccess;
 
     BlockConstIter();
 
@@ -41,10 +38,14 @@ public:
     std::string_view key() const;
 
     std::string_view value() const;
-
+    
     auto getContainer() { return container_; }
+private:
+    //    using Iter_ptr=typename std::pointer_traits<Ptr>::template
+    //    rebind<Block>;
+    // class Block;
+    BlockConstIter(const Block *container, const char *p, uint32_t restart);
 
-public:
     void increment();
 
     bool equal(const BlockConstIter &other) const;
@@ -69,7 +70,6 @@ private:
 
     mutable std::string cur_key_;
     std::string_view cur_entry_;
-    // mutable std::string cur_value_;
 };
 
 struct BlockContent
@@ -87,8 +87,6 @@ public:
 
     Block() = default;
 
-    Status Init(std::string_view content);
-
     friend class BlockConstIter;
     using Iter = BlockConstIter;
 
@@ -97,6 +95,9 @@ public:
     [[nodiscard]] Iter begin() const;
 
     [[nodiscard]] Iter end() const;
+
+private:
+    Status Init(std::string_view content);
 
     [[nodiscard]] Iter lower_bound(std::string_view key) const;
 

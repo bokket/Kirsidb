@@ -33,16 +33,11 @@ public:
     TwoLevelIterator(const SSTable* table, BlockConstIter* index_iter, BlockConstIter* data_iter)
             //explicit TwoLevelIterator(SSTable* table,BlockConstIter&& index_iter,BlockConstIter&& data_iter)
             : table_(table), index_iter_ {index_iter}, data_iter_ {data_iter} {
-        LOG_INFO("?");
     }
 
     TwoLevelIterator()=default;
 
-    ~TwoLevelIterator() {
-        if(data_iter_) {
-            data_iter_.get_deleter();
-        }
-    }
+    ~TwoLevelIterator()=default;
 
     TwoLevelIterator(const TwoLevelIterator& rhs);
 
@@ -92,6 +87,8 @@ public:
     Iter begin() const;
 
     Iter end() const;
+
+    Status find(std::string_view key,std::string& res) const;
 
     SSTable::Iter find(std::string_view key) const;
 
