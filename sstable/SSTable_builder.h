@@ -4,37 +4,39 @@
 
 #pragma once
 
-#include <boost/crc.hpp>
+#include <cstdint>
+#include "./footer.h"
+#include "./Options.h"
+#include "./block_builder.h"
 
 #include "../file/writableFile.h"
-#include "./footer.h"
-#include "./block_builder.h"
-#include "./Options.h"
 
-namespace bokket
-{
+namespace bokket {
 
 class BlockBuilder;
 
-class SSTableBuilder
-{
+class SSTableBuilder {
 public:
+    SSTableBuilder(const Options* options, WritableFile* file);
 
-    SSTableBuilder(const Options* options,WritableFile* file);
-
-    Status Add(std::string_view key,std::string_view value);
+    Status Add(std::string_view key, std::string_view value);
 
     Status Finish();
 
-    void FindShortest(std::string& start,std::string_view limit) const;
-
     [[nodiscard]] size_t NumEntries() const;
+
+    [[nodiscard]] uint64_t fileSize() const;
+
 private:
     Status flush();
 
-    Status writeBlock(BlockBuilder* block,BlockHandle& handle);
+    Status writeBlock(BlockBuilder* block, BlockHandle& handle);
 
-    void writeBytesBlock(std::string_view data,BlockHandle& handle);
+    Status writeBlock(BlockBuilder* block);
+
+    void writeBytesBlock(std::string_view data, BlockHandle& handle);
+
+    void FindShortest(std::string& start, std::string_view limit) const;
 
 private:
     BlockBuilder data_block_;
@@ -52,4 +54,4 @@ private:
     const Options* options_;
 };
 
-}
+} // namespace bokket

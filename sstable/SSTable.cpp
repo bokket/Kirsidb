@@ -1,4 +1,9 @@
 #include "SSTable.h"
+#include <boost/smart_ptr/intrusive_ptr.hpp>
+#include <memory>
+#include <string_view>
+#include <utility>
+#include "block_iter.h"
 
 using namespace bokket;
 
@@ -9,42 +14,26 @@ SSTable::SSTable(ReadableFile* file)
 {}
 
 SSTable::~SSTable() {
-    if (file_) {
-        LOG_INFO("{?}");
-        delete file_;
-    }
+     
+    //LOG_INFO("{?}");
+    delete file_;
+    
 }
 
 SSTable* SSTable::Open(ReadableFile* file, uint64_t file_size) {
     std::unique_ptr<SSTable> table = std::make_unique<SSTable>(file);
 
-    //auto* sst=new SSTable(file);
-
     table->index_block_=table->ReadIndexBlock(file_size);
 
     table->data_block_=table->ReadDataBlock(table->index_block_->begin().value());
 
-    //s = table->ReadIndexBlock();
-
-    //s=sst->ObtainBlockByIndex(file);
-
-    // *table=sst;
-
-    // return Status::OK();
-
     return table.release();
 }
 
-std::unique_ptr<Block>  SSTable::ReadDataBlock(std::string_view index_value) {
+std::unique_ptr<Block> SSTable::ReadDataBlock(std::string_view index_value) {
     std::cout << index_value << std::endl;
 
-    //index_block_ = std::make_shared<Block>(index_value);
-
-    //auto s=index_block_->Init(index_value_);
-
     BlockHandle handle;
-
-    //auto value = index_block_->begin().value();
 
     stat_ = BlockHandle::DecodeFrom(index_value.data(), handle);
 
@@ -52,16 +41,6 @@ std::unique_ptr<Block>  SSTable::ReadDataBlock(std::string_view index_value) {
 
     if (!stat_) 
         return nullptr;
-    //return Status::Corruption("SSTable::ObtainBlockByIndex");
-
-    //std::unique_ptr<Block> data_block_iter;
-    // TODO
-    //LRUCachePolicy* cache= nullptr;
-
-    //     if(cache) {
-    //         // TODO
-
-    //     }
 
     std::string res;
     res.resize(handle.size_);
@@ -72,21 +51,11 @@ std::unique_ptr<Block>  SSTable::ReadDataBlock(std::string_view index_value) {
 
     LOG_INFO("{}", res);
 
-    //data_block_=std::make_unique<Block>();
-    //block_value_ = res;
-
-    //BlockContent content(res);
-
-    //data_block_ = std::make_shared<Block>(res);
-    //data_block_->Init(block_value_);
-    //data_block_=std::make_unique<Block>(content);
     auto data_block=std::make_unique<Block>(res);
 
     LOG_INFO("{}", data_block->begin().key());
 
     return data_block;
-    
-    //return stat_;
 }
 
 std::unique_ptr<Block> SSTable::ReadIndexBlock(uint64_t file_size) {
@@ -109,64 +78,14 @@ std::unique_ptr<Block> SSTable::ReadIndexBlock(uint64_t file_size) {
 
     s = file_->read(footer.index_block_.offset_, footer.index_block_.size_, &index_value);
 
-    index_value_ = index_value;
-    //ReadIndexBlock(index_value);
+    LOG_INFO("{}",index_value);
 
     auto index_block=std::make_unique<Block>(index_value);
 
-
-
     return index_block;
-    //return s;
 }
 
-// BlockConstIter SSTable::ObtainBlockByIndex(void* table,std::string_view index_value)
-// {
-
-//     auto* sst=reinterpret_cast<SSTable*>(table);
-
-//     Block* block=nullptr;
-
-//     auto value=index_value;
-
-//     BlockHandle handle;
-
-//     auto stat=BlockHandle::DecodeFrom(index_value.data(),handle);
-
-//     handle.DebugString();
-
-//     // if(!stat)
-//     //     return ;
-
-//     //std::unique_ptr<Block> data_block_iter;
-//     // TODO
-//     //LRUCachePolicy* cache= nullptr;
-
-//     //     if(cache) {
-//     //         // TODO
-
-//     //     }
-
-//     std::string res;
-//     res.resize(handle.size_);
-
-//     LOG_INFO("{}, {}",handle.offset_,handle.size_);
-
-//     stat=sst->file_->read(handle.offset_,handle.size_,&res);
-
-//     LOG_INFO("{}",res);
-
-//     block=new Block();
-
-//     block->Init(res);
-
-//     LOG_INFO("{},{}",block->begin().key(),block->begin().value());
-
-//     return block->begin();
-// }
-
 SSTable::Iter SSTable::begin() const {
-    //LOG_INFO("{},{}",data_block_->begin().key(),data_block_->begin().value());
     return {this, new BlockConstIter(index_block_->begin()),
             new BlockConstIter(data_block_->begin())};
     //return TwoLevelIterator(this,index_block_->begin(),&SSTable::ObtainBlockByIndex);
@@ -178,7 +97,6 @@ SSTable::Iter SSTable::end() const {
 }
 
 SSTable::Iter SSTable::find(std::string_view key) const {
-    LOG_INFO("{}",key);
 
     auto index_iter = index_block_->find(key);
 
@@ -200,30 +118,6 @@ SSTable::Iter SSTable::find(std::string_view key) const {
     return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
 }
 
-// Status SSTable::ObtainBlockByIndex(const BlockConstIter& it,
-//                                    std::unique_ptr<Block>& data_block) const {
-//     BlockHandle handle;
-//     auto index_value = it.value();
-//     stat_ = BlockHandle::DecodeFrom(index_value.data(), handle);
-
-//     handle.DebugString();
-
-//     if (!stat_) return Status::Corruption("Status SSTable::ObtainBlockByIndex");
-
-//     std::string res;
-//     res.resize(handle.size_);
-
-//     LOG_INFO("{}, {}", handle.offset_, handle.size_);
-
-//     stat_ = file_->read(handle.offset_, handle.size_, &res);
-
-//     LOG_INFO("{}", res);
-
-//     data_block->Init(res);
-
-//     return stat_;
-// }
-
 Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it) const {
     BlockHandle handle;
     auto index_value = it.value();
@@ -234,6 +128,7 @@ Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it) const {
     if (!stat_) return nullptr;
 
     std::unique_ptr<Block> block = nullptr;
+
     LRUCachePolicy* cache = nullptr;
 
     if (cache) {
@@ -258,9 +153,8 @@ Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it) const {
 
     if (!stat_) return nullptr;
 
-    block_value_ = res;
 
-    block = std::make_unique<Block>(block_value_);
+    block = std::make_unique<Block>(res);
 
     stat_ = Status::OK();
 
@@ -275,10 +169,6 @@ TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator& rhs) : table_(rhs.tab
         index_iter_ = std::make_unique<BlockConstIter>(*rhs.index_iter_);
 
         table_ = rhs.table_;
-
-        //data_iter_=rhs.data_iter_;
-        //index_iter_=rhs.index_iter_;
-        //table_=rhs.table_;
     }
 }
 
@@ -286,20 +176,16 @@ TwoLevelIterator& TwoLevelIterator::operator=(const bokket::TwoLevelIterator& rh
     LOG_INFO("TwoLevelIterator::operator=");
     if (*this != rhs) {
 
-        table_ = rhs.table_;
-
-        data_iter_ = std::make_unique<BlockConstIter>(*rhs.data_iter_);
-        index_iter_ = std::make_unique<BlockConstIter>(*rhs.index_iter_);
+        TwoLevelIterator tmp(rhs);
+        std::swap(*this,tmp);
     }
 
     return *this;
-    // TwoLevelIterator tmp(rhs);
-    // std::swap(*this,tmp);
-    // return *this;
 }
 
 bool TwoLevelIterator::equal(const bokket::TwoLevelIterator& other) const {
-    if (!data_iter_ || !other.data_iter_) return data_iter_.get() == other.data_iter_.get();
+    if (!data_iter_ || !other.data_iter_) 
+        return data_iter_.get() == other.data_iter_.get();
 
     return *data_iter_ == *other.data_iter_;
 }
@@ -310,35 +196,15 @@ void TwoLevelIterator::increment() {
     ++(*data_iter_);
 
     if ((*data_iter_) == data_iter_->getContainer()->end()) {
-        LOG_INFO("[  ]");
 
         ++(*index_iter_);
 
         if ((*index_iter_) == index_iter_->getContainer()->end()) {
-            LOG_INFO("?");
-
             data_iter_ = nullptr;
-            //index_iter_=nullptr;
-            //TwoLevelIterator tmp;
-            //*this=tmp;
-            //std::swap(*this,tmp);
-
         } else {
-            LOG_INFO("?");
-
-            // std::unique_ptr<Block> data_block=std::make_unique<Block>();
-
-            // const_cast<SSTable*>(table_)->ObtainBlockByIndex(*index_iter_,data_block);
-
-            //auto block(const_cast<SSTable*>(table_)->ObtainBlockByIndex(*index_iter_));
-
             block_.reset(const_cast<SSTable*>(table_)->ObtainBlockByIndex(*index_iter_));
 
             data_iter_ = std::make_unique<BlockConstIter>(block_->begin());
-
-            // TwoLevelIterator tmp(const_cast<SSTable*>(table_),
-            //                     new BlockConstIter((*index_iter_)),new BlockConstIter(data_block->begin()));
-            // std::swap(*this,tmp);
         }
     }
 }

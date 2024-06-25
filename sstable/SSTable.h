@@ -3,9 +3,10 @@
 #include <memory>
 #include <string_view>
 
-#include "Options.h"
+
 #include "footer.h"
 #include "format.h"
+#include "Options.h"
 #include "block_iter.h"
 
 #include "../cache/cache.h"
@@ -26,42 +27,41 @@ class TwoLevelIterator : public TwoLevelIterFacade {
 public:
     friend class SSTable;
 
+    friend class IteratorCoreAccess;
+
 public:
-    // TwoLevelIterator(SSTable* table,BlockConstIter&& index_iter,BlockFunction block_function)
-    //                         :table_(table)
-    //                         ,index_iter_{index_iter}
-    //                         ,data_iter_{}
-    //                         ,block_function_(std::move(block_function))
     TwoLevelIterator(const SSTable* table, BlockConstIter* index_iter, BlockConstIter* data_iter)
             //explicit TwoLevelIterator(SSTable* table,BlockConstIter&& index_iter,BlockConstIter&& data_iter)
             : table_(table), index_iter_ {index_iter}, data_iter_ {data_iter} {
         LOG_INFO("?");
     }
 
-    TwoLevelIterator() { LOG_INFO("?"); }
+    TwoLevelIterator()=default;
 
-    ~TwoLevelIterator() { LOG_INFO("?"); }
+    ~TwoLevelIterator() {
+        if(data_iter_) {
+            data_iter_.get_deleter();
+        }
+    }
 
     TwoLevelIterator(const TwoLevelIterator& rhs);
 
     TwoLevelIterator& operator=(const TwoLevelIterator& rhs);
 
     [[nodiscard]] std::string_view Key() const {
-        LOG_INFO("{?}");
         return data_iter_->key();
     }
 
     [[nodiscard]] std::string_view Value() const {
-        LOG_INFO("{?}");
         return data_iter_->value();
     }
 
-public:
+    [[nodiscard]] inline bool valid() const;
+
+private:
     void increment();
 
     [[nodiscard]] bool equal(const TwoLevelIterator& other) const;
-
-    [[nodiscard]] inline bool valid() const;
 
 private:
     // BlockConstIter index_iter_;
@@ -87,26 +87,25 @@ public:
 
     // Status ObtainBlockByIndex(const BlockConstIter& it, std::unique_ptr<Block>& data_block) const;
 
-    Block* ObtainBlockByIndex(const BlockConstIter& it) const;
-
-    std::unique_ptr<Block>  ReadIndexBlock(uint64_t file_size);
-
-    std::unique_ptr<Block>  ReadDataBlock(std::string_view index_value);
-
     friend class TwoLevelIterator;
     using Iter = TwoLevelIterator;
     Iter begin() const;
 
     Iter end() const;
 
-    Iter find(std::string_view key) const;
+    SSTable::Iter find(std::string_view key) const;
+
+private:
+    Block* ObtainBlockByIndex(const BlockConstIter& it) const;
+
+    std::unique_ptr<Block>  ReadIndexBlock(uint64_t file_size);
+
+    std::unique_ptr<Block>  ReadDataBlock(std::string_view index_value);
 
 private:
     mutable Status stat_;
     ReadableFile* file_;
     //const Options* options_;
-    std::string index_value_;
-    mutable std::string block_value_;
 
     std::unique_ptr<Block> index_block_;
     std::unique_ptr<Block> data_block_;
