@@ -38,7 +38,7 @@ public:
     TwoLevelIterator()=default;
 
     ~TwoLevelIterator()=default;
-
+ 
     TwoLevelIterator(const TwoLevelIterator& rhs);
 
     TwoLevelIterator& operator=(const TwoLevelIterator& rhs);
@@ -90,18 +90,18 @@ public:
 
     Status find(std::string_view key,std::string& res) const;
 
-    SSTable::Iter find(std::string_view key) const;
+    SSTable::Iter find(const std::string& key) const;
 
 private:
     Block* ObtainBlockByIndex(const BlockConstIter& it) const;
 
-    std::unique_ptr<Block>  ReadIndexBlock(uint64_t file_size);
+    std::unique_ptr<Block> ReadIndexBlock(uint64_t file_size);
 
-    std::unique_ptr<Block>  ReadDataBlock(std::string_view index_value);
+    std::unique_ptr<Block> ReadDataBlock(std::string_view index_value);
 
 private:
     mutable Status stat_;
-    ReadableFile* file_;
+    std::unique_ptr<ReadableFile> file_;
     //const Options* options_;
 
     std::unique_ptr<Block> index_block_;

@@ -3,6 +3,8 @@
 //
 
 #include "block_iter.h"
+#include <algorithm>
+#include <iterator>
 
 using namespace bokket;
 
@@ -80,6 +82,15 @@ Block::Iter Block::find(std::string_view key) const {
     return Compare(it.key(), key) != 0 ? end() : it;
 }
 
+Block::Iter Block::find_if(std::string_view key) const {
+    for(auto it=begin();it!=end();it++)
+    {
+        if(it.key()==key)
+            return it;
+    }
+    return end();
+}
+
 Block::Iter Block::begin() const {
     return {this, data_.data(), 0};
 }
@@ -128,14 +139,17 @@ Block::Iter Block::lower_bound(std::string_view key) const {
     while (left + 1 < right) {
         mid = (left + right) >> 1;
 
-        if (Compare(keyAtRestartPoint(mid), key) >= 0) {
+        if (Compare( keyAtRestartPoint(mid),key) >= 0) {
             right = mid;
+            //LOG_INFO("{}",Compare(keyAtRestartPoint(mid), key));
         } else {
             left = mid;
+            //LOG_INFO("{} | {}",keyAtRestartPoint(mid),key);
+            //LOG_INFO("{}",Compare(keyAtRestartPoint(mid), key));
         }
     }
 
-    if (Compare(keyAtRestartPoint(left), key) > 0) {
+    if (Compare( keyAtRestartPoint(left),key) > 0) {
         //assert(left == 0 && right == left + 1);
         return end();
     }

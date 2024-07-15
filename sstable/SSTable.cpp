@@ -1,15 +1,16 @@
 #include "SSTable.h"
+#include "block_iter.h"
 
 using namespace bokket;
 
 SSTable::SSTable(ReadableFile* file)
-                :file_(file)
+                :file_{file}
                 ,index_block_{nullptr}
                 ,data_block_{nullptr}
 {}
 
 SSTable::~SSTable() {
-    delete file_;
+    //delete file_;
 }
 
 SSTable* SSTable::Open(ReadableFile* file, uint64_t file_size) {
@@ -44,6 +45,8 @@ std::unique_ptr<Block> SSTable::ReadDataBlock(std::string_view index_value) {
     LOG_INFO("{}", res);
 
     auto data_block=std::make_unique<Block>(res);
+
+    
 
     LOG_INFO("{}", data_block->begin().key());
 
@@ -88,52 +91,137 @@ SSTable::Iter SSTable::end() const {
     //return TwoLevelIterator(this,new BlockConstIter(index_block_->end()),new BlockConstIter(data_block_->end()));
 }
 
-SSTable::Iter SSTable::find(std::string_view key) const {
+SSTable::Iter SSTable::find(const std::string& key) const {
+    auto it=index_block_->find_if(key);
 
-    auto index_iter = index_block_->find(key);
+    auto block = ObtainBlockByIndex(it);
 
-    if (index_iter == index_block_->end()) {
+    if (!block)
         return end();
-    }
-
-    auto block = ObtainBlockByIndex(index_iter);
-
-    if (!block) {
-        return end();
-    }
+    
 
     auto block_iter = block->find(key);
     if (block_iter == block->end()) {
         return end();
     }
 
-    return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
+    return {this, new BlockConstIter(it), new BlockConstIter(block_iter)};
+    // for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
+    //     LOG_INFO("{} | {}", it.key(), it.value());
+    //     if(key==it.key())
+    //     {
+    //         //auto index_iter = index_block_->lower_bound(key);
+
+    //         auto block = ObtainBlockByIndex(it);
+
+    //         if (!block) {
+    //             return end();
+    //         }
+
+    //         auto block_iter = block->find(key);
+    //         if (block_iter == block->end()) {
+    //             return end();
+    //         }
+
+    //         return {this, new BlockConstIter(it), new BlockConstIter(block_iter)};
+    //     }
+    // }
+
+    //return end();
+
+    // auto index_iter = index_block_->lower_bound(key);
+
+    // LOG_INFO("{} {}",index_iter.key(),index_iter.value());
+
+    // if (index_iter == index_block_->end()) {
+    //     auto iter = index_block_->lower_bound(key);
+    //     LOG_INFO("{} {}", iter.key(), iter.value());
+    //     for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
+    //         LOG_INFO("{} {}", it.key(), it.value());
+    //         if(it.key()==key)
+    //             LOG_INFO("why");
+    // }
+    //     return end();
+    // }
+
+    // auto block = ObtainBlockByIndex(index_iter);
+
+    // if (!block) {
+    //     LOG_INFO("end");
+    //     return end();
+    // }
+
+    // auto block_iter = block->find(key);
+    // if (block_iter == block->end()) {
+    //     LOG_INFO("end");
+    //     return end();
+    // }
+
+    // return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
 }
 
 Status SSTable::find(std::string_view key,std::string& res) const {
+    // Block::Iter index_iter;
+    // for(auto index_iter=index_block_->begin();index_iter!=index_block_->end();index_iter++)
+    // {
+    //     index_iter=index_block_->find(key);
+    // }
 
-    auto index_iter = index_block_->find(key);
+    for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
+        LOG_INFO("{} | {}", it.key(), it.value());
+        if(key==it.key())
+        {
+            //auto index_iter = index_block_->lower_bound(key);
 
-    if (index_iter == index_block_->end()) {
-        //return end();
+            auto block = ObtainBlockByIndex(it);
+
+            if (!block) {
+                return Status::Corruption("find error");
+            }
+
+            auto block_iter = block->find(key);
+            if (block_iter == block->end()) {
+                return Status::Corruption("find error");
+            }
+
+            res=block_iter.value();
+            
+            LOG_INFO("{}",res);
+
+            delete block;
+
+            return Status::OK();
+        }
     }
 
-    auto block = ObtainBlockByIndex(index_iter);
+    return Status::Corruption("find error");
 
-    if (!block) {
-        //return end();
-    }
 
-    auto block_iter = block->find(key);
-    if (block_iter == block->end()) {
-        //return end();
-    }
 
-    res=block_iter.value();
+    // auto index_iter = index_block_->find(key);
 
-    delete block;
+    // if (index_iter == index_block_->end()) {
+    //     //return end();
+    // }
 
-    return Status::OK();
+    // auto block = ObtainBlockByIndex(index_iter);
+
+    // if (!block) {
+    //     //return end();
+    // }
+
+    // auto block_iter = block->find(key);
+    // if (block_iter == block->end()) {
+    //     //return end();
+    // }
+
+    // res=block_iter.value();
+
+    // LOG_INFO("{}",res);
+
+    // delete block;
+
+    // return Status::OK();
 }
 
 Block* SSTable::ObtainBlockByIndex(const BlockConstIter& it) const {
@@ -183,21 +271,28 @@ TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator& rhs) : table_(rhs.tab
     if (rhs.valid()) {
         LOG_INFO("TwoLevelIterator::TwoLevelIterator(const TwoLevelIterator &rhs)");
 
+        operator=(rhs);
+    }
+}
+
+TwoLevelIterator& TwoLevelIterator::operator=(const TwoLevelIterator& rhs) {
+    LOG_INFO("TwoLevelIterator::operator=");
+    // if (*this != rhs) {
+
+    //     TwoLevelIterator tmp(rhs);
+    //     std::swap(*this,tmp);
+
+    // }
+
+    // return *this;
+
+    if(rhs.valid())
+    {
         data_iter_ = std::make_unique<BlockConstIter>(*rhs.data_iter_);
         index_iter_ = std::make_unique<BlockConstIter>(*rhs.index_iter_);
 
         table_ = rhs.table_;
     }
-}
-
-TwoLevelIterator& TwoLevelIterator::operator=(const bokket::TwoLevelIterator& rhs) {
-    LOG_INFO("TwoLevelIterator::operator=");
-    if (*this != rhs) {
-
-        TwoLevelIterator tmp(rhs);
-        std::swap(*this,tmp);
-    }
-
     return *this;
 }
 

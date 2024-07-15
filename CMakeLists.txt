@@ -18,8 +18,8 @@ set(CXX_FLAGS
         -O2
         -march=native
         -ffast-math
-#        -stdlib=libc++
-        # -std=c++17
+        # -std=c++20
+        # -stdlib=libc++
         )
 # 添加编译选项到所有目标
 add_compile_options(${CXX_FLAGS})
@@ -46,6 +46,113 @@ include_directories(src)
 file(GLOB_RECURSE SRC ./SkipList/skiplist.h
         ./SkipList/skiplist.cpp
         )
+
+file(GLOB_RECURSE SRC_BLOCK
+        ./Log/Log.h
+        ./Log/Log.cpp
+        ./db/status.h
+
+        ./memtable/comparator.cpp
+        ./memtable/comparator.h
+
+        ./tests/random.h
+        ./sstable/block_builder.h
+        ./sstable/block_builder.cpp
+        ./sstable/block_iter.h
+        ./sstable/block_iter.cpp
+        ./sstable/coding.h
+        ./sstable/coding.cpp
+
+        ./iterator/iterator_trait.h
+        ./iterator/iterator.h
+        )
+
+
+file(GLOB_RECURSE SRC_CACHE
+        ./Log/Log.h
+        ./Log/Log.cpp
+
+        ./cache/cache.h
+        ./cache/cache.cpp
+        )
+
+
+file(GLOB_RECURSE SRC_SST
+        ./Log/Log.h
+        ./Log/Log.cpp
+        ./db/status.h
+
+        ./file/file_writer.h
+        ./file/file_writer.cpp
+        ./file/writableFile.h
+
+        ./tests/random.h
+        ./db/export.h
+        ./sstable/block_builder.h
+        ./sstable/block_builder.cpp
+        ./sstable/block_iter.h
+        ./sstable/block_iter.cpp
+        ./sstable/Buf.h
+        ./sstable/footer.h
+        ./sstable/footer.cpp
+        ./sstable/coding.h
+        ./sstable/coding.cpp
+        ./sstable/format.h
+        ./sstable/format.cpp
+        ./sstable/SSTable_builder.h
+        ./sstable/SSTable_builder.cpp
+        ./sstable/SSTable.h
+        ./sstable/SSTable.cpp
+
+        ./iterator/iterator_trait.h
+        ./iterator/iterator.h
+
+        )
+
+file(GLOB_RECURSE SRC_SST_CACHE
+        ./Log/Log.h
+        ./Log/Log.cpp
+        ./db/status.h
+
+        ./file/file_writer.h
+        ./file/file_writer.cpp
+        ./file/writableFile.h
+        ./file/filename.h
+        ./file/filename.cpp
+        ./file/tinyio.h
+        ./file/tinyio.cpp
+
+        ./tests/random.h
+        ./db/export.h
+        ./sstable/block_builder.h
+        ./sstable/block_builder.cpp
+        ./sstable/block_iter.h
+        ./sstable/block_iter.cpp
+        ./sstable/Buf.h
+        ./sstable/footer.h
+        ./sstable/footer.cpp
+        ./sstable/coding.h
+        ./sstable/coding.cpp
+        ./sstable/format.h
+        ./sstable/format.cpp
+        ./sstable/SSTable_builder.h
+        ./sstable/SSTable_builder.cpp
+        ./sstable/SSTable.h
+        ./sstable/SSTable.cpp
+        ./sstable/table_cache.h
+        ./sstable/table_cache.cpp
+
+        ./iterator/iterator_trait.h
+        ./iterator/iterator.h
+
+
+        ./cache/cache.h
+        ./cache/cache.cpp
+
+        )
+
+
+
 file(GLOB_RECURSE SRC_WITHOUT_MAIN 
         ./Log/Log.h
         ./Log/Log.cpp
@@ -60,10 +167,19 @@ file(GLOB_RECURSE SRC_WITHOUT_MAIN
         # ./SkipList/comparator.cpp
         # ./SkipList/comparator.h
 
+        ./write_batch/write_batch.h
+        ./write_batch/write_batch.cpp
+        ./write_batch/write_batch_impl.h
+        ./write_batch/write_batch_impl.cpp
+
         ./memtable/skiplist.cpp
         ./memtable/skiplist.h
         ./memtable/comparator.cpp
         ./memtable/comparator.h
+        ./memtable/internalKeys.h
+        ./memtable/internalKeys.cpp
+        ./memtable/memtable.h
+        ./memtable/memtable.cpp
 
         ./tests/random.h
         ./db/export.h
@@ -92,7 +208,9 @@ file(GLOB_RECURSE SRC_WITHOUT_MAIN
         #./bloomfilter/murmur_hash2.h
         #./bloomfilter/murmur_hash2.cpp
         #./bloomfilter/filter_policy.h
-        ./iterator/iterator_trait.h)
+        ./iterator/iterator_trait.h
+        ./iterator/iterator.h
+        )
 
 file(GLOB_RECURSE SRC_SKIPLIST_TEST ./tests/skiplist_test.cpp)       
 #file(GLOB_RECURSE SRC_SKIPLIST_TEST ./tests/test_skiplist.cpp)
@@ -108,23 +226,35 @@ file(GLOB_RECURSE SRC_LOG_TEST tests/test_log.cpp)
 file(GLOB_RECURSE SRC_SSTABLE_TEST tests/test_SSTable.cpp)
 file(GLOB_RECURSE SRC_SSTABLE_BUILD_TEST tests/test_SSTable_build.cpp)
 
+file(GLOB_RECURSE SRC_SST_CACHE_TEST tests/test_table_cache.cpp)
+
+
+file(GLOB_RECURSE SRC_MEMTABLE_TEST ./tests/test_memtable.cpp)       
+file(GLOB_RECURSE SRC_WRITEBATCH_TEST ./tests/test_write_batch.cpp)
+
 # 生成可执行文件
 add_executable(skiplist_test ${SRC_WITHOUT_MAIN} ${SRC_SKIPLIST_TEST})
 add_executable(status_test ${SRC_WITHOUT_MAIN} ${SRC_STATUS_TEST})
 add_executable(file_writer_test ${SRC_WITHOUT_MAIN} ${SRC_FILE_WRITER_TEST})
-add_executable(block_builder_test ${SRC_WITHOUT_MAIN} ${SRC_BLOCK_BUILDER_TEST})
-add_executable(block_test ${SRC_WITHOUT_MAIN} ${SRC_BLOCK_TEST})
+add_executable(block_builder_test ${SRC_BLOCK} ${SRC_BLOCK_BUILDER_TEST})
+add_executable(block_test ${SRC_BLOCK} ${SRC_BLOCK_TEST})
 #add_executable(bloom_filter_test ${SRC_WITHOUT_MAIN} ${SRC_BLOOM_FILTER_TEST})
 add_executable(iterator_trait_test ${SRC_WITHOUT_MAIN} ${SRC_ITERATOR_TRAIT_TEST})
 add_executable(footer_test ${SRC_WITHOUT_MAIN} ${SRC_FOOTER_TEST})
 
-add_executable(cache_test ${SRC_WITHOUT_MAIN} ${SRC_CACHE_TEST})
+add_executable(cache_test ${SRC_CACHE} ${SRC_CACHE_TEST})
 
 add_executable(log_test ${SRC_WITHOUT_MAIN} ${SRC_LOG_TEST})
 
-add_executable(sstable_test ${SRC_WITHOUT_MAIN} ${SRC_SSTABLE_TEST})
+add_executable(sstable_test ${SRC_SST} ${SRC_SSTABLE_TEST})
 
-add_executable(sstable_build_test ${SRC_WITHOUT_MAIN} ${SRC_SSTABLE_BUILD_TEST})
+add_executable(sstable_build_test ${SRC_SST} ${SRC_SSTABLE_BUILD_TEST})
+
+add_executable(sstable_cache_test ${SRC_SST_CACHE} ${SRC_SST_CACHE_TEST})
+
+add_executable(memtable_test ${SRC_WITHOUT_MAIN} ${SRC_MEMTABLE_TEST})
+
+add_executable(write_batch_test ${SRC_WITHOUT_MAIN} ${SRC_WRITEBATCH_TEST})
 
 # 链接目标库和第三方库
 target_link_libraries(skiplist_test PRIVATE gtest spdlog fmt pthread)
@@ -150,3 +280,9 @@ target_link_libraries(log_test PRIVATE gtest spdlog pthread)
 target_link_libraries(sstable_test PRIVATE gtest spdlog pthread)
 
 target_link_libraries(sstable_build_test PRIVATE gtest spdlog pthread)
+
+target_link_libraries(sstable_cache_test PRIVATE gtest spdlog pthread fmt)
+
+target_link_libraries(memtable_test PRIVATE gtest spdlog pthread fmt)
+
+target_link_libraries(write_batch_test PRIVATE gtest spdlog pthread fmt)

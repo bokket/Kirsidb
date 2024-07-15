@@ -11,7 +11,6 @@
 #include <mutex>
 #include <string_view>
 #include <unordered_map>
-#include <cassert>
 
 #include "../Log/Log.h"
 
@@ -21,11 +20,11 @@ namespace bokket
 
 class LRUCachePolicy;
 //template<typename K,typename V>
-//class LRUCachePolicy<K,V> {
+//class LRUCachePolicy<K,V>
 class LRUCachePolicy {
 public:
-    LRUCachePolicy(size_t capacity)
-                 :capacity_{capacity}
+    explicit LRUCachePolicy(size_t capacity)
+                           :capacity_{capacity}
     {}
 
     ~LRUCachePolicy()=default;
@@ -34,12 +33,18 @@ public:
 public:
     using CacheList=std::list<std::string>;
 
+    //using DeleterFunc=std::function<void(std::string_view,std::any)>;
+
     struct LRUHandle {
-        std::any value_;
+        std::string key_;
+        std::any value_; 
+
         CacheList::const_iterator pos_;
+
+        //DeleterFunc deleter_;
     };
 
-    using CacheTable=std::unordered_map<std::string_view ,LRUHandle>;
+    using CacheTable=std::unordered_map<std::string ,LRUHandle>;
 public:
     LRUHandle* Insert(std::string_view key,const std::any& value);
 
@@ -51,12 +56,12 @@ public:
 
     uint64_t NewId();
 
-
+    void Release(LRUHandle* handle);
 private:
     CacheTable table_;
     CacheList cache_;
     const size_t capacity_;
-    uint64_t unique_id_;
+    uint64_t unique_id_{};
     mutable std::mutex mutex_;
 };
 

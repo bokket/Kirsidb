@@ -19,7 +19,7 @@ class Block;
 class BlockConstIter;
 
 using BlockIterFacade =
-    IteratorFacadeNoValueType<BlockConstIter, ForwardIteratorTag, true>;
+    IteratorFacadeNoValueType<BlockConstIter, std::forward_iterator_tag, true>;
 
 // template<class Ptr>
 class BlockConstIter : public BlockIterFacade
@@ -92,14 +92,15 @@ public:
 
     [[nodiscard]] Iter find(std::string_view key) const;
 
+    [[nodiscard]] Iter find_if(std::string_view key) const;
+
+    [[nodiscard]] Iter lower_bound(std::string_view key) const;
+
     [[nodiscard]] Iter begin() const;
 
     [[nodiscard]] Iter end() const;
-
 private:
     Status Init(std::string_view content);
-
-    [[nodiscard]] Iter lower_bound(std::string_view key) const;
 
     [[nodiscard]] uint32_t restartPoint(int id) const;
 
@@ -107,7 +108,17 @@ private:
 
     [[nodiscard]] static int Compare(std::string_view a, std::string_view b)
     {
-        return a.compare(b);
+        //return a.compare(b);
+        const size_t min_len = (a.size() < b.size()) ? a.size() : b.size();
+        int r = memcmp(a.data(), b.data(), min_len);
+        if (r == 0) {
+            if (a.size() < b.size())
+                r = -1;
+            else if (a.size() > b.size())
+                r = +1;
+        }
+        return r;
+    
     }
 
 private:
