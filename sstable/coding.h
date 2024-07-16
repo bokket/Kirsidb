@@ -4,9 +4,12 @@
 
 #pragma once
 
+#include <iostream>
+#include <bitset>
 #include <string>
 #include <cstdint>
 
+#include "Buf.h"
 
 namespace bokket
 {
@@ -16,6 +19,7 @@ namespace bokket
     void EncodeFixed32(char *buf, uint32_t val);
 
     void EncodeFixed64(char *buf, uint64_t val);
+
 
     uint8_t DecodeFixed8(const char *data);
 
@@ -92,4 +96,27 @@ namespace bokket
     }
 
 
+}
+
+namespace varint 
+{
+    int VarintLength(uint64_t v);
+
+    char* EncodeVarint32(char* dst,uint32_t v);
+
+    void printBinary(uint8_t n);
+
+    const char* GetVarint32Ptr(const char* p, const char* limit,
+                                  uint32_t* value);
+
+    const char* GetVarint32PtrFallback(const char* p, const char* limit,
+                                   uint32_t* value);
+
+    void AppendVar32(std::string* dst,uint32_t v);
+
+    void AppendVarString(std::string* res,const bokket::Buf& buf);
+
+    bool GetLengthPrefixedString(bokket::Buf* input,bokket::Buf* result);
+
+    bool GetVarint32(bokket::Buf* input,uint32_t* value);
 }
