@@ -1,50 +1,93 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.20.5)
 
 # 设置C++标准
 #find_program(CLANG_EXECUTABLE NAMES clang clang++)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_COMPILER clang++)
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_COMPILER clang++)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
 #set(CMAKE_CXX_COMPILER ${CLANG_EXECUTABLE})
+
+# 指定工具链文件
+set(CMAKE_TOOLCHAIN_FILE ./clang-toolchain.cmake)
 
 project(bokedb)
 
 
 # 设置编译选项
-set(CXX_FLAGS
+# set(CXX_FLAGS
 #        -fsanitize=address
 #        -v
 #        -g2
-        -O2
-        -march=native
-        -ffast-math
-        # -std=c++20
+        # -O2
+        # -march=native
+        # -ffast-math
+        # -std=c++2b
         # -stdlib=libc++
-        )
+        # )
 # 添加编译选项到所有目标
-add_compile_options(${CXX_FLAGS})
+# add_compile_options(${CXX_FLAGS})
+# set(CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_BUILD_TYPE Debug)
+
+# if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+# endif()
+
+# add_compile_options(-stdlib=libc++)
+# add_link_options(-stdlib=libc++)
+# add_link_options(-static-libstdc++)
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
 
 #https://stackoverflow.com/questions/64821367/clion-wont-run-binary-with-address-sanitizer
-add_compile_options(-fsanitize=address -fno-omit-frame-pointer -fsanitize=leak)
-add_link_options(-fsanitize=address -fno-omit-frame-pointer -fsanitize=leak)
+# add_compile_options(-fsanitize=address -fno-omit-frame-pointer -fsanitize=leak)
+# add_link_options(-fsanitize=address -fno-omit-frame-pointer -fsanitize=leak)
+
+# add_compile_options(-fimplicit-modules -fimplicit-module-maps)
+# add_link_options(-fimplicit-modules -fimplicit-module-maps)
+
+
 
 # 查找并链接第三方库
-find_package(Boost COMPONENTS thread system REQUIRED)
-find_package(GTest REQUIRED)
-find_package(benchmark REQUIRED)
-find_package(spdlog REQUIRED)
+# find_package(Boost COMPONENTS thread system REQUIRED)
+# find_package(GTest REQUIRED)
+# find_package(benchmark REQUIRED)
 #find_package(nlohmann_json 3.2.0 REQUIRED)
 #find_package(absl REQUIRED)
-find_package(fmt REQUIRED)
+# find_package(fmt REQUIRED)
+# find_package(spdlog REQUIRED)
 
 # 添加头文件目录
 include_directories(src)
 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+
+
 # 添加源文件目录
-file(GLOB_RECURSE SRC ./SkipList/skiplist.h
+file(GLOB SRC ./SkipList/skiplist.h
         ./SkipList/skiplist.cpp
+        )
+
+file(GLOB SRC_STATUS
+        ./Log/Log.h
+        ./Log/Log.cpp
+
+        ./db/status.h
+        )
+
+file(GLOB_RECURSE SRC_LOG
+        ./Log/Log.h
+        ./Log/Log.cpp
         )
 
 file(GLOB_RECURSE SRC_BLOCK
@@ -65,6 +108,33 @@ file(GLOB_RECURSE SRC_BLOCK
 
         ./iterator/iterator_trait.h
         ./iterator/iterator.h
+        )
+
+file(GLOB_RECURSE SRC_ITERATOR_TRAIT
+        ./iterator/iterator_trait.h
+        ./iterator/iterator.h
+        )
+
+file(GLOB_RECURSE SRC_WAL
+        ./Log/Log.h
+        ./Log/Log.cpp
+        ./db/status.h
+
+        ./file/file_writer.h
+        ./file/file_writer.cpp
+        ./file/writableFile.h
+        ./file/readableFile.h
+        ./file/tinyio.h
+        ./file/tinyio.cpp
+
+        ./wal/crc32.h
+        ./wal/crc32.cpp
+        ./wal/wal_reader.h
+        ./wal/wal_reader.cpp
+        ./wal/wal_writer.h
+        ./wal/wal_writer.cpp
+        ./wal/wal_format.h
+        ./wal/enum_trait.h
         )
 
 
@@ -232,19 +302,21 @@ file(GLOB_RECURSE SRC_SST_CACHE_TEST tests/test_table_cache.cpp)
 file(GLOB_RECURSE SRC_MEMTABLE_TEST ./tests/test_memtable.cpp)       
 file(GLOB_RECURSE SRC_WRITEBATCH_TEST ./tests/test_write_batch.cpp)
 
+file(GLOB_RECURSE SRC_WAL_TEST ./tests/test_wal.cpp)       
+
 # 生成可执行文件
 add_executable(skiplist_test ${SRC_WITHOUT_MAIN} ${SRC_SKIPLIST_TEST})
-add_executable(status_test ${SRC_WITHOUT_MAIN} ${SRC_STATUS_TEST})
+add_executable(status_test ${SRC_STATUS} ${SRC_STATUS_TEST})
 add_executable(file_writer_test ${SRC_WITHOUT_MAIN} ${SRC_FILE_WRITER_TEST})
 add_executable(block_builder_test ${SRC_BLOCK} ${SRC_BLOCK_BUILDER_TEST})
 add_executable(block_test ${SRC_BLOCK} ${SRC_BLOCK_TEST})
 #add_executable(bloom_filter_test ${SRC_WITHOUT_MAIN} ${SRC_BLOOM_FILTER_TEST})
-add_executable(iterator_trait_test ${SRC_WITHOUT_MAIN} ${SRC_ITERATOR_TRAIT_TEST})
+add_executable(iterator_trait_test ${SRC_ITERATOR_TRAIT} ${SRC_ITERATOR_TRAIT_TEST})
 add_executable(footer_test ${SRC_WITHOUT_MAIN} ${SRC_FOOTER_TEST})
 
 add_executable(cache_test ${SRC_CACHE} ${SRC_CACHE_TEST})
 
-add_executable(log_test ${SRC_WITHOUT_MAIN} ${SRC_LOG_TEST})
+add_executable(log_test ${SRC_LOG} ${SRC_LOG_TEST})
 
 add_executable(sstable_test ${SRC_SST} ${SRC_SSTABLE_TEST})
 
@@ -256,12 +328,14 @@ add_executable(memtable_test ${SRC_WITHOUT_MAIN} ${SRC_MEMTABLE_TEST})
 
 add_executable(write_batch_test ${SRC_WITHOUT_MAIN} ${SRC_WRITEBATCH_TEST})
 
+add_executable(wal_test ${SRC_WAL} ${SRC_WAL_TEST})
+
 # 链接目标库和第三方库
-target_link_libraries(skiplist_test PRIVATE gtest spdlog fmt pthread)
+target_link_libraries(skiplist_test PRIVATE gtest spdlog pthread)
 
-target_link_libraries(status_test PRIVATE gtest spdlog fmt)
+target_link_libraries(status_test PRIVATE gtest spdlog)
 
-target_link_libraries(file_writer_test PRIVATE gtest pthread spdlog fmt)
+target_link_libraries(file_writer_test PRIVATE gtest pthread spdlog)
 
 target_link_libraries(block_builder_test PRIVATE gtest spdlog pthread)
 
@@ -281,8 +355,10 @@ target_link_libraries(sstable_test PRIVATE gtest spdlog pthread)
 
 target_link_libraries(sstable_build_test PRIVATE gtest spdlog pthread)
 
-target_link_libraries(sstable_cache_test PRIVATE gtest spdlog pthread fmt)
+target_link_libraries(sstable_cache_test PRIVATE gtest spdlog pthread)
 
-target_link_libraries(memtable_test PRIVATE gtest spdlog pthread fmt)
+target_link_libraries(memtable_test PRIVATE gtest spdlog pthread)
 
-target_link_libraries(write_batch_test PRIVATE gtest spdlog pthread fmt)
+target_link_libraries(write_batch_test PRIVATE gtest spdlog pthread)
+
+target_link_libraries(wal_test PRIVATE gtest spdlog pthread )
