@@ -35,5 +35,4 @@ void BlockHandle::DebugString() {
     LOG_INFO( "[offset_: offset = {} , size = {} ]" ,
               std::to_string(offset_)  ,
               std::to_string(size_));
-    return ;
 }

@@ -3,8 +3,6 @@
 //
 
 #include "block_iter.h"
-#include <algorithm>
-#include <iterator>
 
 using namespace bokket;
 
@@ -133,11 +131,16 @@ std::string_view Block::keyAtRestartPoint(int id) const {
 }
 
 Block::Iter Block::lower_bound(std::string_view key) const {
+    LOG_INFO("{}",key);
     int left = 0, mid = left;
     int right = num_restart_;
 
     while (left + 1 < right) {
         mid = (left + right) >> 1;
+
+        auto com=Compare( keyAtRestartPoint(mid),key);
+
+        LOG_INFO("{}",com);
 
         if (Compare( keyAtRestartPoint(mid),key) >= 0) {
             right = mid;

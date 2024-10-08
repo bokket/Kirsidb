@@ -30,13 +30,13 @@ private:
     std::vector<int32_t> restarts_;
 public:
     //restart
-    static constexpr int32_t RESTART_INTERVAL=16;
+    static constexpr int32_t RESTART_INTERVAL=2;
 
 public:
     BlockBuilder();
     ~BlockBuilder()=default;
 
-    void add(std::string_view key,std::string_view value);
+    void add( std::string_view key,std::string_view value);
 
     Status finish();
 
@@ -53,6 +53,8 @@ public:
     auto size() {
         return data_.size();
     }
+
+    [[nodiscard]] bool empty() const;
 
 private:
     auto restart_size() {

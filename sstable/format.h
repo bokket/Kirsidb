@@ -28,9 +28,10 @@ struct BlockHandle {
 
     void Encode(std::string& output, const BlockHandle& handle);
 
-    std::string EncodeToString() const;
+    [[nodiscard]] std::string EncodeToString() const;
 
     static Status DecodeFrom(const char* input, BlockHandle& handle);
+
 
     std::string DebugString(const BlockHandle& handle);
 

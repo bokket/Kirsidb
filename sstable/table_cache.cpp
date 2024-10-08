@@ -1,5 +1,4 @@
 #include "table_cache.h"
-#include <string_view>
 
 using namespace bokket;
 

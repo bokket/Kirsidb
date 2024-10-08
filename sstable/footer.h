@@ -4,45 +4,40 @@
 
 #pragma once
 
+#include "format.h"
 #include <string>
 #include <string_view>
-#include "format.h"
 
 #include "../Log/Log.h"
 #include "../db/status.h"
 
-namespace bokket
-{
-
-
+namespace bokket {
 
 // echo https://github.com/bokket/Kirsidb | sha1sum
 static const uint64_t kTableMagicNumber = 0x41ac5b09a8323be3ull;
 
-class Footer
-{
+class Footer {
 public:
-    Footer()=default;
+	Footer() = default;
 
-    Footer(const BlockHandle& meta,const BlockHandle& index)
-          :meta_block_{meta}
-          ,index_block_{index}
-    {}
+	Footer(const BlockHandle& meta, const BlockHandle& index)
+		: meta_block_{meta}
+		, index_block_{index} { }
 
-    void EncodeTo(std::string& dst);
+	void EncodeTo(std::string& dst);
 
-    std::string EncodeToString() const;
+	std::string EncodeToStringIndex() const;
 
-    static Status DecodeFrom(std::string_view& input, Footer& footer);
+	std::string EncodeToString() const;
 
-    //void setFilterBlockMetaData();
+	static Status DecodeFrom(std::string& input, Footer& footer);
 
-    void DebugString();
+	//void setFilterBlockMetaData();
 
-    BlockHandle meta_block_;
-    BlockHandle index_block_;
+	void DebugString();
+
+	BlockHandle meta_block_;
+	BlockHandle index_block_;
 };
 
-}
-
-
+} // namespace bokket

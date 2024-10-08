@@ -19,7 +19,7 @@ void BlockBuilder::add(std::string_view key, std::string_view value) {
 
     //RESTART_INTERVAL
 
-    if (record_num_ % 10== 0) {
+    if (record_num_ % 2== 0) {
         need = true;
         LOG_INFO("restart_size:{}", restart_size());
         restarts_.emplace_back(static_cast<int32_t>(data_.size()));
@@ -30,6 +30,8 @@ void BlockBuilder::add(std::string_view key, std::string_view value) {
         PutFixed32(data_, static_cast<int32_t>(key.size()));
 
         PutFixed32(data_, static_cast<int32_t>(value.size()));
+
+        LOG_INFO("{}",value.size());
 
         data_.append(key);
         data_.append(value);
@@ -61,6 +63,13 @@ void BlockBuilder::add(std::string_view key, std::string_view value) {
 
     ++record_num_;
     pre_key_ = key;
+
+    auto shared_key_len_=DecodeFixed32(data_.data());
+    auto unshared_key_len_= DecodeFixed32(data_.data()+sizeof(int32_t));
+    auto value_len_= DecodeFixed32(data_.data()+sizeof(int32_t)*2);
+
+    LOG_INFO("{},{},{}",shared_key_len_,unshared_key_len_,value_len_);
+
 
     LOG_INFO("{},{}",pre_key_,data_);
 
@@ -138,4 +147,9 @@ void BlockBuilder::clear() {
     data_.clear();
 
     record_num_=0;
+}
+
+bool BlockBuilder::empty() const
+{
+    return data_.empty();
 }

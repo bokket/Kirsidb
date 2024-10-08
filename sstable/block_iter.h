@@ -109,8 +109,10 @@ private:
     [[nodiscard]] static int Compare(std::string_view a, std::string_view b)
     {
         //return a.compare(b);
+        LOG_INFO("{},{}",a,b);
         const size_t min_len = (a.size() < b.size()) ? a.size() : b.size();
         int r = memcmp(a.data(), b.data(), min_len);
+        
         if (r == 0) {
             if (a.size() < b.size())
                 r = -1;

@@ -10,6 +10,20 @@ void Footer::EncodeTo(std::string &dst) {
   //  block_index_.Encode(dst);
 }
 
+std::string Footer::EncodeToStringIndex() const {
+    std::string s{index_block_.EncodeToString()};
+
+    LOG_INFO("Footer:{} {}",s,s.size());
+
+    assert(s.length()<=40);
+
+    //s.resize(48);
+
+
+
+    return s;
+}
+
 std::string Footer::EncodeToString() const {
 
     std::string s{index_block_.EncodeToString()+meta_block_.EncodeToString()};
@@ -25,7 +39,7 @@ std::string Footer::EncodeToString() const {
     return s;
 }
 
-Status Footer::DecodeFrom(std::string_view &input,Footer& footer) {
+Status Footer::DecodeFrom(std::string &input,Footer& footer) {
 
 
     auto s= BlockHandle::DecodeFrom(input.data(),footer.index_block_);

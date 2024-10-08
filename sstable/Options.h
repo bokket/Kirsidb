@@ -6,14 +6,14 @@
 
 #include <cstddef>
 
-namespace bokket
-{
+namespace bokket {
 
 struct Options
 {
     int block_restart_interval;
-    //4M
-    std::size_t block_size=4*1024;
+    // 4M
+    //std::size_t block_size=4*1024;
+    std::size_t block_size = 12;
 };
 
-}
+} // namespace bokket

@@ -92,20 +92,20 @@ SSTable::Iter SSTable::end() const {
 }
 
 SSTable::Iter SSTable::find(const std::string& key) const {
-    auto it=index_block_->find_if(key);
+    // auto it=index_block_->find_if(key);
 
-    auto block = ObtainBlockByIndex(it);
+    // auto block = ObtainBlockByIndex(it);
 
-    if (!block)
-        return end();
+    // if (!block)
+    //     return end();
     
 
-    auto block_iter = block->find(key);
-    if (block_iter == block->end()) {
-        return end();
-    }
+    // auto block_iter = block->find(key);
+    // if (block_iter == block->end()) {
+    //     return end();
+    // }
 
-    return {this, new BlockConstIter(it), new BlockConstIter(block_iter)};
+    // return {this, new BlockConstIter(it), new BlockConstIter(block_iter)};
     // for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
     //     LOG_INFO("{} | {}", it.key(), it.value());
     //     if(key==it.key())
@@ -129,11 +129,11 @@ SSTable::Iter SSTable::find(const std::string& key) const {
 
     //return end();
 
-    // auto index_iter = index_block_->lower_bound(key);
+    auto index_iter = index_block_->lower_bound(key);
 
-    // LOG_INFO("{} {}",index_iter.key(),index_iter.value());
+    LOG_INFO("{} {}",index_iter.key(),index_iter.value());
 
-    // if (index_iter == index_block_->end()) {
+    if (index_iter == index_block_->end()) {
     //     auto iter = index_block_->lower_bound(key);
     //     LOG_INFO("{} {}", iter.key(), iter.value());
     //     for(auto it = index_block_->begin(); it!=index_block_->end(); it++) {
@@ -141,23 +141,23 @@ SSTable::Iter SSTable::find(const std::string& key) const {
     //         if(it.key()==key)
     //             LOG_INFO("why");
     // }
-    //     return end();
-    // }
+        return end();
+    }
 
-    // auto block = ObtainBlockByIndex(index_iter);
+    auto block = ObtainBlockByIndex(index_iter);
 
-    // if (!block) {
-    //     LOG_INFO("end");
-    //     return end();
-    // }
+    if (!block) {
+        LOG_INFO("end");
+        return end();
+    }
 
-    // auto block_iter = block->find(key);
-    // if (block_iter == block->end()) {
-    //     LOG_INFO("end");
-    //     return end();
-    // }
+    auto block_iter = block->find(key);
+    if (block_iter == block->end()) {
+        LOG_INFO("end");
+        return end();
+    }
 
-    // return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
+    return {this, new BlockConstIter(index_iter), new BlockConstIter(block_iter)};
 }
 
 Status SSTable::find(std::string_view key,std::string& res) const {

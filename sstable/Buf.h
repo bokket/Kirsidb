@@ -9,21 +9,22 @@
 #include <string>
 #include <string_view>
 #include <cstddef>
+#include <iostream>
 
 namespace bokket
 {
 
 class Buf {
 public:
-    Buf(const std::string& s)
+    explicit Buf(const std::string& s)
        :Buf(s.data(),s.size())
     {}
 
-    Buf(const char* s)
+    explicit Buf(const char* s)
       :Buf(s,strlen(s))
     {}
 
-    Buf(std::string_view s)
+    explicit Buf(std::string_view s)
        : Buf(s.data(),s.size())
     {}
 
@@ -32,21 +33,25 @@ public:
                 ,size_(n)
     {}
 
-    constexpr Buf(std::nullptr_t p= nullptr)
+    constexpr explicit Buf(std::nullptr_t p= nullptr)
                  :data_(nullptr)
                  ,size_(0)
     {}
 
-    size_t size() const {
+    [[nodiscard]] size_t size() const {
         return size_;
     }
 
-    const char *data() const {
+    [[nodiscard]] const char *data() const {
         return data_;
     }
 
-    bool empty() const {
+    [[nodiscard]] bool empty() const {
         return size_ == 0;
+    }
+
+    const char &operator[](size_t n) const {
+        return data_[n];
     }
 
     void skip(size_t n) {
@@ -54,14 +59,19 @@ public:
         data_+=n;
         size_-=n;
     }
+
+    [[nodiscard]] std::string ToString() const
+    {
+        return std::string{data_,size_};
+    }
 private:
     const char* data_;
     std::size_t size_;
 };
 
 inline std::ostream &operator<<(std::ostream &stream, const Buf &buf) {
-    return stream << buf.data();
+    return stream<<buf.data();
+    
 }
-
 
 }
