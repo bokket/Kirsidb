@@ -13,7 +13,7 @@ using namespace std;
 TEST(ReadBlockFromFile,read) {
     auto path="/home/bokket/bokedb1/tests/sst.txt";
 
-    auto cmd=fmt::format("rm -rf {}",path);
+    auto cmd=std::format("rm -rf {}",path);
     LOG_INFO("cmd:{}",cmd);
     std::system(cmd.data());
 
