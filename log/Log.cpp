@@ -7,10 +7,10 @@
 using namespace bokket;
 
 Logger::~Logger() {
-    if (isInited_) {
+    // if (isInited_) {
 
-        this->shutdown();
-    }
+    //     shutdown();
+    // }
 }
 
 
