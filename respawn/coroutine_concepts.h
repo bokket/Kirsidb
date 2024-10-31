@@ -1,10 +1,8 @@
 #pragma once
 
-
 #include <type_traits>
 #include <utility>
-
-#include "urspawn_fwd.h"
+#include <coroutine>
 
 namespace urspawn::detail
 {
@@ -58,72 +56,63 @@ inline constexpr _get_awaiter::fn get_awaiter{};
 
 }
 
-namespace urspawn::detail 
+namespace  urspawn::detail
 {
 
-template<typename Awaiter,typename =void>
-struct await_result_impl{
+template<typename T>
+concept convertible_to_boolean_impl=std::convertible_to<T, bool>;
+
+// need experimental verification
+template<typename T>
+concept boolean_testable = convertible_to_boolean_impl<T> and requires (T&& t) {
+    { not static_cast<T&&>(t) } -> convertible_to_boolean_impl;
 };
 
 template<typename Awaiter>
-struct await_result_impl<Awaiter,std::void_t<decltype(std::declval<Awaiter&>().await_ready() ? 0:1  ),
-                                             decltype(std::declval<Awaiter&>().await_resume())>>
+concept is_awaiter=requires(Awaiter a) 
 {
-    using type=decltype(std::declval<Awaiter&>().await_resume());
+    {a.await_ready()} -> convertible_to_boolean_impl;
+    a.await_resume();
+};
+
+
+template<typename Awaiter>
+concept awaiter = is_awaiter<Awaiter>;
+
+template<typename Awaitable>
+using awaiter_type=decltype(get_awaiter(std::declval<Awaitable>()));
+
+template<typename Awaitable>
+concept awaitable_impl = is_awaiter<awaiter_type<Awaitable>>;
+
+template<typename Awaitable>
+concept awaitable = awaitable_impl<Awaitable>;
+
+}
+
+namespace urspawn::detail 
+{
+
+template<typename Awaiter>
+struct await_result_impl;
+
+template<typename Awaiter> 
+requires (awaiter<Awaiter>)
+struct await_result_impl<Awaiter> {
+    using type = decltype(std::declval<Awaiter&>().await_resume());
+};
+
+
+template<typename Awaiter> 
+requires (!awaiter<Awaiter>)
+struct await_result_impl<Awaiter> {
+    using type = void;
 };
 
 template<typename Awaiter>
 using await_result_impl_t=typename await_result_impl<Awaiter>::type;
 
-
-template<typename Awaitable>
-using awaiter_type=decltype(get_awaiter(std::declval<Awaitable>()));
-
-
-// template<typename Awaitable>
-// using await_result_t=await_result_impl_t<awaiter_type<Awaitable>>;
-// using await_result_t=typename await_result_impl<awaiter_type<Awaitable>>::type;
-
-// warn don't use
-// using await_result_t=await_result_impl_t<Awaitable>;
-
-/// I don't know why.
-/// T is awaitable.
-/// T is awaitable.
-/// T is awaitable. 
-
-template<typename Awaitable,typename =void>
-struct await_result
-{
-};
-
-template<typename Awaitable>
-// must await_result_impl type 
-// std::void_t<await_result_impl_t<awaiter_type<Awaitable>>
-struct await_result<Awaitable,std::void_t<typename await_result_impl<awaiter_type<Awaitable>>::type>>
-{
-    using type=std::conditional_t<
-        std::is_same_v<await_result_impl<Awaitable>, await_result>,
-        await_result_impl<awaiter_type<Awaitable>>,
-        await_result>;
-};
-
-template<typename Awaitable>
-using await_result_t=typename await_result<Awaitable>::type;
-
-
-
-
-
-template<typename Awaitable>
-concept awaitable_impl= requires(Awaitable a)
-{
-    typename await_result_t<Awaitable>;
-};
-
-
-template<typename Awaitable>
-concept awaitable=awaitable_impl<Awaitable>;
-
+template<typename Awaiter>
+using await_result_t=typename await_result_impl<Awaiter>::type;
 
 }
